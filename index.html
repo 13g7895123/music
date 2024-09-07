@@ -12,55 +12,56 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
+    <script src="https://www.youtube.com/iframe_api"/>
 
-    <script>
-      var tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/player_api";
-      var firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    // <script>
+    //   var tag = document.createElement('script');
+    //   tag.src = "https://www.youtube.com/player_api";
+    //   var firstScriptTag = document.getElementsByTagName('script')[0];
+    //   firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
     
-      let player;
-      function onYouTubePlayerAPIReady() {
-        player = new YT.Player('ytplayer', {
-          height: '360',
-          width: '640',
-          videoId: 'bHQqvYy5KYo',
-          events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange
-          }
-        })
-      }
+    //   let player;
+    //   function onYouTubePlayerAPIReady() {
+    //     player = new YT.Player('ytplayer', {
+    //       height: '360',
+    //       width: '640',
+    //       videoId: 'bHQqvYy5KYo',
+    //       events: {
+    //         'onReady': onPlayerReady,
+    //         'onStateChange': onPlayerStateChange
+    //       }
+    //     })
+    //   }
 
-      function onPlayerReady(event) {
-        event.target.playVideo();
-      }
+    //   function onPlayerReady(event) {
+    //     event.target.playVideo();
+    //   }
 
-      let done = false;
-      let pid = 0;
-      function onPlayerStateChange(event) {
+    //   let done = false;
+    //   let pid = 0;
+    //   function onPlayerStateChange(event) {
         
-        console.log(event.data);
-        if (event.data == 0 ) {
-          done = true;
-        }
+    //     console.log(event.data);
+    //     if (event.data == 0 ) {
+    //       done = true;
+    //     }
 
-        if(done){
-          done = false;
-          $("#app")[0]._vnode.component.ctx.change_yt();
-        }
-      }
+    //     if(done){
+    //       done = false;
+    //       $("#app")[0]._vnode.component.ctx.change_yt();
+    //     }
+    //   }
 
-      function stopVideo() {
-        player.stopVideo();
-      }
+    //   function stopVideo() {
+    //     player.stopVideo();
+    //   }
 
-    </script>
-    <script>
-      function setup(){
-        noCanvas();
-        noLoop();
-      }
-    </script>
+    // </script>
+    // <script>
+    //   function setup(){
+    //     noCanvas();
+    //     noLoop();
+    //   }
+    // </script>
   </body>
 </html>

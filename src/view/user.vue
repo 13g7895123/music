@@ -35,7 +35,9 @@
     max-width: 320px;
     margin: 0 auto;
     background-color: #f5f5f5;
-    padding: 20px;
+    padding: 30px;
+    padding-right: 50px;
+    padding-left: 50px;
     border-radius: 12px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }

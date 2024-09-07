@@ -17,7 +17,15 @@ const routes = [
     },
     {
         path: "/demo/3",
-        component: () => import('../view/play.vue'),
+        component: () => import('../view/demo3.vue'),
+    },
+    {
+        path: "/demo/4",
+        component: () => import('../view/demo4.vue'),
+    },
+    {
+        path: "/setting",
+        component: () => import('../view/setting.vue'),
     },
 ]
 
