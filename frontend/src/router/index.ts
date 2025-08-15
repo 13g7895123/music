@@ -41,6 +41,11 @@ const router = createRouter({
       component: () => import('../views/PlaylistDetailView.vue'),
       beforeEnter: authGuard
     },
+    {
+      path: '/player',
+      name: 'Player',
+      component: () => import('../views/PlayerView.vue')
+    },
     // 默認重導向到首頁
     {
       path: '/:pathMatch(.*)*',

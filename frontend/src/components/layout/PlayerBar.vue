@@ -1,147 +1,149 @@
 <template>
-  <div
-    v-if="showPlayer"
+  <div 
+    v-if="showPlayer && currentSong"
     class="player-bar"
-    :class="{ 'compact': isCompact, 'expanded': isExpanded }"
+    :class="{ 'expanded': isExpanded }"
   >
-    <!-- 緊湊模式播放控制 -->
-    <div v-if="isCompact" class="compact-player">
-      <div class="compact-song-info" @click="toggleExpanded">
-        <div class="compact-thumbnail">
+    <div class="player-bar-content">
+      <!-- 歌曲資訊區 -->
+      <div class="song-info-section" @click="goToPlayerPage">
+        <div class="song-thumbnail">
           <img
-            v-if="currentSong?.thumbnailUrl"
+            v-if="currentSong.thumbnailUrl"
             :src="currentSong.thumbnailUrl"
             :alt="currentSong.title"
-            class="thumbnail-image"
+            class="thumbnail-img"
           />
           <div v-else class="thumbnail-placeholder">🎵</div>
+          
+          <!-- 播放動畫 -->
+          <div v-if="isPlaying" class="playing-animation">
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+          </div>
         </div>
         
-        <div class="compact-details">
-          <h4 class="compact-title">{{ currentSong?.title || '未選擇歌曲' }}</h4>
-          <p class="compact-artist">{{ currentSong?.artist || '未知藝術家' }}</p>
+        <div class="song-details">
+          <h4 class="song-title">{{ currentSong.title }}</h4>
+          <p class="song-artist">{{ currentSong.artist || '未知藝術家' }}</p>
+          <div class="song-progress">
+            <div 
+              class="progress-bar-mini"
+              :style="{ width: `${progress}%` }"
+            ></div>
+          </div>
         </div>
       </div>
 
-      <div class="compact-controls">
+      <!-- 主要控制區 -->
+      <div class="main-controls-section">
         <button
           @click="playPrev"
           :disabled="!hasPrev"
-          class="compact-btn"
+          class="control-btn-mini"
           title="上一首"
         >
           ⏮️
         </button>
-
+        
         <button
           @click="togglePlay"
-          :disabled="!currentSong"
-          class="compact-btn play-btn"
+          class="control-btn-mini play-btn-main"
           :title="isPlaying ? '暫停' : '播放'"
         >
           {{ isPlaying ? '⏸️' : '▶️' }}
         </button>
-
+        
         <button
           @click="playNext"
           :disabled="!hasNext && queue.length === 0"
-          class="compact-btn"
+          class="control-btn-mini"
           title="下一首"
         >
           ⏭️
         </button>
       </div>
 
-      <div class="compact-secondary">
-        <div class="compact-progress">
-          <div class="mini-progress-bar">
-            <div
-              class="mini-progress-fill"
-              :style="{ width: `${progress}%` }"
-            ></div>
+      <!-- 輔助控制區 -->
+      <div class="secondary-controls-section">
+        <div class="volume-section">
+          <button
+            @click="toggleMute"
+            class="control-btn-mini"
+            :title="isMuted ? '取消靜音' : '靜音'"
+          >
+            {{ getVolumeIcon() }}
+          </button>
+          
+          <div class="volume-slider-mini">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              :value="displayVolume"
+              @input="onVolumeChange"
+              class="volume-input-mini"
+            />
           </div>
-          <span class="compact-time">
-            {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
-          </span>
         </div>
-
-        <div class="compact-actions">
-          <button
-            @click="toggleQueue"
-            :class="{ active: showQueue }"
-            class="compact-btn"
-            :title="`播放佇列 (${queue.length})`"
-          >
-            📋 {{ queue.length > 0 ? queue.length : '' }}
-          </button>
-
-          <button
-            @click="toggleExpanded"
-            class="compact-btn"
-            title="展開播放器"
-          >
-            ⬆️
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 展開模式播放控制 -->
-    <div v-else class="expanded-player">
-      <div class="expanded-header">
-        <h3>正在播放</h3>
-        <button @click="toggleExpanded" class="close-btn">
-          ⬇️
+        
+        <button
+          @click="toggleExpanded"
+          class="control-btn-mini expand-btn"
+          :title="isExpanded ? '收合' : '展開'"
+        >
+          {{ isExpanded ? '🔽' : '🔼' }}
         </button>
+        
+        <router-link
+          to="/player"
+          class="control-btn-mini fullscreen-btn"
+          title="全螢幕播放器"
+        >
+          ⛶
+        </router-link>
       </div>
-
-      <PlaybackControls />
     </div>
 
-    <!-- YouTube 播放器組件 -->
-    <div v-if="currentSong" class="youtube-player-wrapper">
-      <YouTubePlayer
-        :video-id="currentSong.youtubeId"
-        :show-video="isVideoVisible"
-        :width="isExpanded ? 640 : 0"
-        :height="isExpanded ? 360 : 0"
-        @ready="onPlayerReady"
-        @state-change="onPlayerStateChange"
-        @error="onPlayerError"
-      />
+    <!-- 展開區域 -->
+    <div v-if="isExpanded" class="expanded-section">
+      <PlaybackControls />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePlayerStore } from '@/stores/player'
 import PlaybackControls from '@/components/player/PlaybackControls.vue'
-import YouTubePlayer from '@/components/player/YouTubePlayer.vue'
 
+const router = useRouter()
 const playerStore = usePlayerStore()
 
-// Refs
 const isExpanded = ref(false)
-const showQueue = ref(false)
+const isMuted = ref(false)
 
 // Computed
 const showPlayer = computed(() => playerStore.showPlayer)
 const currentSong = computed(() => playerStore.currentSong)
 const isPlaying = computed(() => playerStore.isPlaying)
-const currentTime = computed(() => playerStore.currentTime)
-const duration = computed(() => playerStore.duration)
 const progress = computed(() => playerStore.progress)
+const volume = computed(() => playerStore.volume)
 const queue = computed(() => playerStore.queue)
 const hasNext = computed(() => playerStore.hasNext)
 const hasPrev = computed(() => playerStore.hasPrev)
-const isVideoVisible = computed(() => playerStore.isVideoVisible)
 
-const isCompact = computed(() => !isExpanded.value)
+const displayVolume = computed(() => isMuted.value ? 0 : volume.value * 100)
 
 // Methods
 const togglePlay = () => {
-  playerStore.togglePlayPause()
+  if (isPlaying.value) {
+    playerStore.pause()
+  } else {
+    playerStore.play()
+  }
 }
 
 const playNext = () => {
@@ -152,37 +154,40 @@ const playPrev = () => {
   playerStore.playPrev()
 }
 
+const onVolumeChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const newVolume = parseInt(target.value) / 100
+  
+  if (isMuted.value) {
+    isMuted.value = false
+  }
+  
+  playerStore.setVolume(newVolume)
+}
+
+const toggleMute = () => {
+  isMuted.value = !isMuted.value
+  if (isMuted.value) {
+    playerStore.setVolume(0)
+  } else {
+    playerStore.setVolume(0.7)
+  }
+}
+
+const getVolumeIcon = () => {
+  if (isMuted.value || volume.value === 0) return '🔇'
+  if (volume.value < 0.3) return '🔈'
+  if (volume.value < 0.7) return '🔉'
+  return '🔊'
+}
+
 const toggleExpanded = () => {
   isExpanded.value = !isExpanded.value
 }
 
-const toggleQueue = () => {
-  showQueue.value = !showQueue.value
+const goToPlayerPage = () => {
+  router.push('/player')
 }
-
-const formatTime = (seconds: number): string => {
-  return playerStore.formatTime(seconds)
-}
-
-// YouTube Player 事件處理
-const onPlayerReady = (player: any) => {
-  console.log('YouTube Player ready in PlayerBar')
-}
-
-const onPlayerStateChange = (state: number) => {
-  console.log('YouTube Player state changed:', state)
-}
-
-const onPlayerError = (error: any) => {
-  console.error('YouTube Player error:', error)
-}
-
-// 監聽路由變化，自動收起播放器
-watch(() => window.location.pathname, () => {
-  if (isExpanded.value) {
-    isExpanded.value = false
-  }
-})
 </script>
 
 <style scoped>
@@ -191,54 +196,42 @@ watch(() => window.location.pathname, () => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: white;
-  border-top: 1px solid #e5e7eb;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   z-index: 1000;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
 }
 
-.player-bar.compact {
-  height: 80px;
-}
-
-.player-bar.expanded {
-  height: 60vh;
-  min-height: 400px;
-  max-height: 80vh;
-}
-
-.compact-player {
+.player-bar-content {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
-  height: 100%;
-  gap: 1rem;
+  padding: 12px 16px;
+  min-height: 72px;
 }
 
-.compact-song-info {
+.song-info-section {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
   flex: 1;
-  min-width: 0;
   cursor: pointer;
   transition: opacity 0.2s;
 }
 
-.compact-song-info:hover {
+.song-info-section:hover {
   opacity: 0.8;
 }
 
-.compact-thumbnail {
+.song-thumbnail {
+  position: relative;
   width: 48px;
   height: 48px;
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
-  flex-shrink: 0;
+  margin-right: 12px;
 }
 
-.thumbnail-image {
+.thumbnail-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -247,231 +240,174 @@ watch(() => window.location.pathname, () => {
 .thumbnail-placeholder {
   width: 100%;
   height: 100%;
-  background: #f3f4f6;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  color: #6b7280;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 1.5rem;
 }
 
-.compact-details {
+.playing-animation {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  display: flex;
+  gap: 2px;
+}
+
+.wave {
+  width: 3px;
+  height: 12px;
+  background: #fff;
+  animation: wave 1.5s ease-in-out infinite;
+}
+
+.wave:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.wave:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.song-details {
   flex: 1;
   min-width: 0;
 }
 
-.compact-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1f2937;
-  margin: 0 0 0.125rem 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.compact-artist {
-  font-size: 0.75rem;
-  color: #6b7280;
+.song-title {
+  font-size: 14px;
+  font-weight: 600;
   margin: 0;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.song-artist {
+  font-size: 12px;
+  opacity: 0.8;
+  margin: 2px 0 4px 0;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.compact-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.compact-btn {
-  background: none;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 0.375rem;
-  border-radius: 50%;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-}
-
-.compact-btn:hover:not(:disabled) {
-  background: #f3f4f6;
-  transform: scale(1.1);
-}
-
-.compact-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.compact-btn.active {
-  background: #3b82f6;
-  color: white;
-}
-
-.compact-btn.play-btn {
-  background: #3b82f6;
-  color: white;
-  font-size: 1.125rem;
-  width: 36px;
-  height: 36px;
-}
-
-.compact-btn.play-btn:hover:not(:disabled) {
-  background: #2563eb;
-}
-
-.compact-secondary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  min-width: 120px;
-}
-
-.compact-progress {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.mini-progress-bar {
+.song-progress {
+  width: 100%;
   height: 2px;
-  background: #e5e7eb;
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 1px;
   overflow: hidden;
 }
 
-.mini-progress-fill {
+.progress-bar-mini {
   height: 100%;
-  background: #3b82f6;
-  transition: width 0.1s linear;
+  background: #fff;
+  transition: width 0.1s ease;
 }
 
-.compact-time {
-  font-size: 0.625rem;
-  color: #6b7280;
-  font-family: 'Monaco', 'Consolas', monospace;
-  text-align: center;
-}
-
-.compact-actions {
+.main-controls-section {
   display: flex;
-  justify-content: center;
-  gap: 0.25rem;
-}
-
-.expanded-player {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.expanded-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
+  gap: 8px;
+  margin: 0 24px;
 }
 
-.expanded-header h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
+.secondary-controls-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.close-btn {
-  background: none;
+.control-btn-mini {
+  background: rgba(255, 255, 255, 0.2);
   border: none;
-  font-size: 1.25rem;
+  color: white;
+  padding: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  font-size: 14px;
 }
 
-.close-btn:hover {
-  background: #e5e7eb;
+.control-btn-mini:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
 }
 
-.youtube-player-wrapper {
-  position: absolute;
-  top: -1000px;
-  left: -1000px;
-  opacity: 0;
-  pointer-events: none;
+.control-btn-mini:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
+.play-btn-main {
+  padding: 12px;
+  font-size: 16px;
+}
+
+.volume-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.volume-slider-mini {
+  width: 80px;
+}
+
+.volume-input-mini {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  outline: none;
+  border-radius: 2px;
+}
+
+.expanded-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 16px;
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: scaleY(0.5);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* 響應式設計 */
 @media (max-width: 768px) {
-  .compact-player {
-    padding: 0.5rem;
-    gap: 0.75rem;
+  .player-bar-content {
+    padding: 8px 12px;
   }
   
-  .compact-song-info {
-    gap: 0.5rem;
+  .main-controls-section {
+    margin: 0 16px;
   }
   
-  .compact-thumbnail {
-    width: 40px;
-    height: 40px;
+  .volume-section {
+    display: none;
   }
   
-  .compact-controls {
-    gap: 0.375rem;
+  .song-title {
+    font-size: 13px;
   }
   
-  .compact-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 0.875rem;
-  }
-  
-  .compact-btn.play-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
-  }
-  
-  .compact-secondary {
-    min-width: 100px;
+  .song-artist {
+    font-size: 11px;
   }
 }
 
 @media (max-width: 480px) {
-  .compact-player {
-    flex-wrap: wrap;
-    height: auto;
-    min-height: 80px;
+  .secondary-controls-section .volume-section {
+    display: none;
   }
   
-  .compact-song-info {
-    flex: 1 1 100%;
-    margin-bottom: 0.5rem;
-  }
-  
-  .compact-controls {
-    flex: 1;
-    justify-content: center;
-  }
-  
-  .compact-secondary {
-    flex: 1;
-    min-width: auto;
-  }
-  
-  .player-bar.compact {
-    height: auto;
-    min-height: 100px;
+  .expand-btn {
+    display: none;
   }
 }
 </style>
