@@ -35,3 +35,5 @@
    - 修復以上問題並add commit push
 23. 修復以下問題
    - Internal Server Error Preprocessor dependency "sass" not found. Did you install it? Try `npm install -D sass`.
+24. 修復以下問題
+   - The requested module '/node_modules/.vite/deps/axios.js?v=62d2edcd' does not provide an export named 'AxiosInstance'
