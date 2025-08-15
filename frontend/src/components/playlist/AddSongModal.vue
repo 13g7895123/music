@@ -10,164 +10,183 @@
         <!-- 選項卡 -->
         <div class="tab-container">
           <button
-            :class="['tab-button', { active: activeTab === 'youtube' }]"
-            @click="activeTab = 'youtube'"
+            :class="['tab-button', { active: activeTab === 'url' }]"
+            @click="activeTab = 'url'"
           >
             YouTube URL
           </button>
           <button
-            :class="['tab-button', { active: activeTab === 'search' }]"
-            @click="activeTab = 'search'"
+            :class="['tab-button', { active: activeTab === 'copy' }]"
+            @click="activeTab = 'copy'"
           >
-            搜尋歌曲
+            從其他播放清單
           </button>
         </div>
 
         <!-- YouTube URL 選項卡 -->
-        <div v-if="activeTab === 'youtube'" class="tab-content">
-          <div class="form-group">
-            <label>YouTube 網址</label>
-            <textarea
-              v-model="youtubeUrls"
-              placeholder="輸入 YouTube 網址，每行一個&#10;例如：&#10;https://www.youtube.com/watch?v=dQw4w9WgXcQ&#10;https://youtu.be/dQw4w9WgXcQ"
-              class="form-textarea"
-              rows="6"
-            />
-            <div class="field-hint">
-              每行輸入一個 YouTube 網址，最多 10 個
+        <div v-if="activeTab === 'url'" class="tab-content">
+          <!-- 單個URL輸入 -->
+          <div class="url-input-section">
+            <label for="youtube-url">YouTube URL</label>
+            <div class="input-group">
+              <input
+                id="youtube-url"
+                v-model="currentUrl"
+                type="text"
+                placeholder="請輸入 YouTube 影片連結..."
+                class="url-input"
+                @paste="onUrlPaste"
+                @keyup.enter="addUrl"
+              />
+              <button
+                @click="addUrl"
+                :disabled="!currentUrl || isValidating"
+                class="add-url-button"
+              >
+                {{ isValidating ? '驗證中...' : '添加' }}
+              </button>
+              <button
+                @click="autoFillFromClipboard"
+                :disabled="!clipboardSupported"
+                class="clipboard-button"
+                title="從剪貼簿自動填入"
+              >
+                📋
+              </button>
+            </div>
+            <p class="input-hint">
+              支援格式：youtube.com/watch?v=xxx, youtu.be/xxx 等
+            </p>
+          </div>
+
+          <!-- 批量添加 -->
+          <div class="batch-section">
+            <button
+              @click="showBatchInput = !showBatchInput"
+              class="toggle-batch"
+            >
+              {{ showBatchInput ? '隱藏' : '顯示' }}批量添加
+            </button>
+            
+            <div v-if="showBatchInput" class="batch-input">
+              <label for="batch-urls">批量添加 (每行一個URL)</label>
+              <textarea
+                id="batch-urls"
+                v-model="batchUrls"
+                placeholder="https://www.youtube.com/watch?v=xxx&#10;https://youtu.be/xxx&#10;..."
+                rows="5"
+                class="batch-textarea"
+                @paste="onBatchPaste"
+              ></textarea>
+              <button
+                @click="processBatchUrls"
+                :disabled="!batchUrls.trim() || isProcessing"
+                class="btn-secondary"
+              >
+                {{ isProcessing ? '處理中...' : '批量添加' }}
+              </button>
             </div>
           </div>
 
-          <div class="form-actions">
-            <button
-              @click="validateUrls"
-              :disabled="!youtubeUrls.trim() || isValidating"
-              class="btn-secondary"
-            >
-              <span v-if="isValidating" class="loading-spinner"></span>
-              {{ isValidating ? '驗證中...' : '驗證網址' }}
-            </button>
-            <button
-              @click="addFromYoutube"
-              :disabled="!validUrls.length || isSubmitting"
-              class="btn-primary"
-            >
-              <span v-if="isSubmitting" class="loading-spinner"></span>
-              {{ isSubmitting ? '添加中...' : `添加 ${validUrls.length} 首歌曲` }}
-            </button>
-          </div>
-
-          <!-- URL 驗證結果 -->
-          <div v-if="urlValidationResults.length > 0" class="validation-results">
-            <h4>驗證結果</h4>
-            <div class="url-results">
+          <!-- 待添加歌曲列表 -->
+          <div v-if="pendingSongs.length > 0" class="pending-songs">
+            <h3>待添加歌曲 ({{ pendingSongs.length }})</h3>
+            <div class="pending-list">
               <div
-                v-for="result in urlValidationResults"
-                :key="result.url"
-                :class="['url-result', { valid: result.isValid, invalid: !result.isValid }]"
+                v-for="(song, index) in pendingSongs"
+                :key="index"
+                class="pending-item"
+                :class="{ error: song.error }"
               >
-                <div class="url-info">
-                  <span class="url-status">{{ result.isValid ? '✅' : '❌' }}</span>
-                  <span class="url-text">{{ result.url }}</span>
-                </div>
-                <div v-if="result.error" class="url-error">{{ result.error }}</div>
-                <div v-if="result.videoInfo" class="video-info">
+                <div class="song-thumbnail">
                   <img
-                    v-if="result.videoInfo.thumbnailUrl"
-                    :src="result.videoInfo.thumbnailUrl"
-                    :alt="result.videoInfo.title"
-                    class="video-thumbnail"
+                    v-if="song.thumbnailUrl && !song.error"
+                    :src="song.thumbnailUrl"
+                    :alt="song.title"
                   />
-                  <div class="video-details">
-                    <div class="video-title">{{ result.videoInfo.title }}</div>
-                    <div class="video-artist">{{ result.videoInfo.artist || '未知藝術家' }}</div>
+                  <div v-else class="thumbnail-placeholder">
+                    {{ song.error ? '❌' : '🎵' }}
                   </div>
                 </div>
+                
+                <div class="song-info">
+                  <h4>{{ song.error ? '無法載入' : song.title }}</h4>
+                  <p>{{ song.error || song.artist || '未知藝術家' }}</p>
+                  <small v-if="song.url">{{ song.url }}</small>
+                </div>
+                
+                <button
+                  @click="removePendingSong(index)"
+                  class="remove-button"
+                >
+                  ✕
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 搜尋歌曲選項卡 -->
-        <div v-if="activeTab === 'search'" class="tab-content">
-          <div class="form-group">
-            <label>搜尋歌曲</label>
-            <div class="search-container">
-              <input
-                v-model="searchQuery"
-                type="text"
-                placeholder="輸入歌曲名稱或藝術家"
-                class="form-input"
-                @keyup.enter="searchSongs"
-              />
-              <button
-                @click="searchSongs"
-                :disabled="!searchQuery.trim() || isSearching"
-                class="search-button"
+        <!-- 從其他播放清單複製 -->
+        <div v-if="activeTab === 'copy'" class="tab-content">
+          <div class="source-playlist-selector">
+            <label for="source-playlist">選擇來源播放清單</label>
+            <select
+              id="source-playlist"
+              v-model="selectedSourcePlaylist"
+              class="playlist-select"
+              @change="loadSourcePlaylistSongs"
+            >
+              <option value="">請選擇播放清單</option>
+              <option
+                v-for="playlist in availablePlaylists"
+                :key="playlist.id"
+                :value="playlist.id"
               >
-                🔍
-              </button>
+                {{ playlist.name }} ({{ playlist._count.songs }} 首歌)
+              </option>
+            </select>
+          </div>
+
+          <div v-if="sourceSongs.length > 0" class="source-songs">
+            <div class="songs-header">
+              <h3>選擇要複製的歌曲</h3>
+              <div class="select-actions">
+                <button @click="selectAllSourceSongs" class="btn-link">
+                  全選
+                </button>
+                <button @click="deselectAllSourceSongs" class="btn-link">
+                  取消全選
+                </button>
+              </div>
             </div>
-          </div>
-
-          <!-- 搜尋結果 -->
-          <div v-if="isSearching" class="loading-state">
-            <div class="spinner"></div>
-            <p>搜尋中...</p>
-          </div>
-
-          <div v-else-if="searchResults.length > 0" class="search-results">
-            <h4>搜尋結果</h4>
-            <div class="song-list">
+            
+            <div class="source-songs-list">
               <div
-                v-for="song in searchResults"
+                v-for="song in sourceSongs"
                 :key="song.id"
-                class="song-item"
-                :class="{ selected: selectedSongs.includes(song.id) }"
-                @click="toggleSongSelection(song)"
+                class="source-song-item"
+                :class="{ selected: selectedSongs.includes(song.song.id) }"
+                @click="toggleSongSelection(song.song.id)"
               >
-                <div class="song-checkbox">
-                  <input
-                    type="checkbox"
-                    :checked="selectedSongs.includes(song.id)"
-                    @change="toggleSongSelection(song)"
-                  />
-                </div>
+                <input
+                  type="checkbox"
+                  :checked="selectedSongs.includes(song.song.id)"
+                  @change="toggleSongSelection(song.song.id)"
+                />
                 <div class="song-thumbnail">
                   <img
-                    v-if="song.thumbnailUrl"
-                    :src="song.thumbnailUrl"
-                    :alt="song.title"
-                    class="thumbnail"
+                    v-if="song.song.thumbnailUrl"
+                    :src="song.song.thumbnailUrl"
+                    :alt="song.song.title"
                   />
                   <div v-else class="thumbnail-placeholder">🎵</div>
                 </div>
                 <div class="song-info">
-                  <div class="song-title">{{ song.title }}</div>
-                  <div class="song-artist">{{ song.artist || '未知藝術家' }}</div>
-                </div>
-                <div class="song-duration">
-                  {{ formatDuration(song.duration) }}
+                  <h4>{{ song.song.title }}</h4>
+                  <p>{{ song.song.artist || '未知藝術家' }}</p>
                 </div>
               </div>
             </div>
-
-            <div class="form-actions">
-              <button
-                @click="addSelectedSongs"
-                :disabled="selectedSongs.length === 0 || isSubmitting"
-                class="btn-primary"
-              >
-                <span v-if="isSubmitting" class="loading-spinner"></span>
-                {{ isSubmitting ? '添加中...' : `添加 ${selectedSongs.length} 首歌曲` }}
-              </button>
-            </div>
-          </div>
-
-          <div v-else-if="searchQuery && !isSearching" class="empty-state">
-            <div class="empty-icon">🔍</div>
-            <p>沒有找到相關歌曲</p>
-            <p class="empty-hint">試試其他關鍵字或使用 YouTube URL 添加</p>
           </div>
         </div>
 
@@ -181,205 +200,285 @@
           {{ successMessage }}
         </div>
       </div>
+
+      <div class="modal-footer">
+        <div class="footer-info">
+          <span v-if="activeTab === 'url' && pendingSongs.length > 0">
+            將添加 {{ pendingSongs.filter(s => !s.error).length }} 首歌曲
+          </span>
+          <span v-if="activeTab === 'copy' && selectedSongs.length > 0">
+            已選擇 {{ selectedSongs.length }} 首歌曲
+          </span>
+        </div>
+        <div class="footer-actions">
+          <button @click="closeModal" class="btn-secondary">
+            取消
+          </button>
+          <button
+            @click="confirmAdd"
+            :disabled="!canConfirm || isAdding"
+            class="btn-primary"
+          >
+            {{ isAdding ? '添加中...' : '確定添加' }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { usePlaylistStore } from '@/stores/playlist'
-import { api } from '@/services/api'
+import { useYouTubeService } from '@/services/youtube'
+import { useClipboard } from '@/composables/useClipboard'
 
 interface Props {
   playlistId: number
 }
 
-interface Emits {
-  (e: 'close'): void
-  (e: 'added'): void
+interface PendingSong {
+  title: string
+  artist?: string
+  thumbnailUrl?: string
+  url: string
+  youtubeId: string
+  error?: string
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const emit = defineEmits<{
+  close: []
+  added: []
+}>()
 
 const playlistStore = usePlaylistStore()
+const youtubeService = useYouTubeService()
+const clipboard = useClipboard()
 
-const activeTab = ref<'youtube' | 'search'>('youtube')
-const youtubeUrls = ref('')
-const searchQuery = ref('')
-const selectedSongs = ref<number[]>([])
-const searchResults = ref<any[]>([])
-const urlValidationResults = ref<any[]>([])
-const isSubmitting = ref(false)
-const isSearching = ref(false)
+const activeTab = ref<'url' | 'copy'>('url')
+const currentUrl = ref('')
+const batchUrls = ref('')
+const showBatchInput = ref(false)
 const isValidating = ref(false)
+const isProcessing = ref(false)
+const isAdding = ref(false)
+
+const pendingSongs = ref<PendingSong[]>([])
+const availablePlaylists = ref([])
+const selectedSourcePlaylist = ref('')
+const sourceSongs = ref([])
+const selectedSongs = ref<number[]>([])
 const error = ref('')
 const successMessage = ref('')
 
-const validUrls = computed(() => {
-  return urlValidationResults.value
-    .filter(result => result.isValid)
-    .map(result => result.url)
+const clipboardSupported = computed(() => clipboard.isSupported.value)
+
+const canConfirm = computed(() => {
+  if (activeTab.value === 'url') {
+    return pendingSongs.value.some(song => !song.error)
+  } else {
+    return selectedSongs.value.length > 0
+  }
 })
 
-const closeModal = () => {
-  emit('close')
-}
-
-const validateUrls = async () => {
-  if (!youtubeUrls.value.trim()) return
+const addUrl = async () => {
+  if (!currentUrl.value || isValidating.value) return
 
   isValidating.value = true
-  error.value = ''
-  urlValidationResults.value = []
-
   try {
-    const urls = youtubeUrls.value
-      .split('\n')
-      .map(url => url.trim())
-      .filter(url => url.length > 0)
-      .slice(0, 10) // 限制最多 10 個
-
-    if (urls.length === 0) {
-      error.value = '請輸入至少一個 YouTube 網址'
-      return
+    const videoInfo = await youtubeService.parseUrl(currentUrl.value)
+    
+    // 檢查是否已經存在
+    const exists = pendingSongs.value.some(song => song.youtubeId === videoInfo.id)
+    if (exists) {
+      throw new Error('這首歌曲已經在待添加列表中')
     }
 
-    const results = []
-    for (const url of urls) {
-      try {
-        const response = await api.post('/youtube/validate', { url })
-        
-        if (response.data.data.isValid) {
-          // 嘗試獲取影片資訊
-          try {
-            const parseResponse = await api.post('/youtube/parse', { url })
-            results.push({
-              url,
-              isValid: true,
-              videoInfo: parseResponse.data.data
-            })
-          } catch (parseError: any) {
-            results.push({
-              url,
-              isValid: true,
-              error: parseError.response?.data?.message || '無法獲取影片資訊'
-            })
-          }
-        } else {
-          results.push({
-            url,
-            isValid: false,
-            error: '無效的 YouTube 網址'
-          })
-        }
-      } catch (err: any) {
-        results.push({
-          url,
-          isValid: false,
-          error: err.response?.data?.message || '驗證失敗'
-        })
-      }
-    }
+    pendingSongs.value.push({
+      title: videoInfo.title,
+      artist: videoInfo.artist,
+      thumbnailUrl: videoInfo.thumbnailUrl,
+      url: currentUrl.value,
+      youtubeId: videoInfo.id
+    })
 
-    urlValidationResults.value = results
-  } catch (err: any) {
-    error.value = err.response?.data?.message || '驗證失敗'
+    currentUrl.value = ''
+  } catch (error: any) {
+    pendingSongs.value.push({
+      title: '',
+      url: currentUrl.value,
+      youtubeId: '',
+      error: error.message || '無法解析此URL'
+    })
   } finally {
     isValidating.value = false
   }
 }
 
-const addFromYoutube = async () => {
-  if (validUrls.value.length === 0) return
-
-  isSubmitting.value = true
-  error.value = ''
-  successMessage.value = ''
-
-  try {
-    const result = await playlistStore.addSongsByYouTubeUrls(props.playlistId, validUrls.value)
-    
-    successMessage.value = `成功添加 ${result.successful?.length || 0} 首歌曲`
-    
-    if (result.failed?.length > 0) {
-      error.value = `${result.failed.length} 個網址添加失敗`
+const onUrlPaste = async (event: ClipboardEvent) => {
+  const pastedText = event.clipboardData?.getData('text')
+  if (pastedText) {
+    const urls = pastedText.split('\n').filter(url => url.trim())
+    if (urls.length > 1) {
+      batchUrls.value = pastedText
+      showBatchInput.value = true
+      currentUrl.value = ''
     }
-
-    // 清空表單
-    youtubeUrls.value = ''
-    urlValidationResults.value = []
-    
-    setTimeout(() => {
-      emit('added')
-    }, 1500)
-  } catch (err: any) {
-    error.value = err.response?.data?.message || '添加失敗'
-  } finally {
-    isSubmitting.value = false
   }
 }
 
-const searchSongs = async () => {
-  if (!searchQuery.value.trim()) return
+const onBatchPaste = (event: ClipboardEvent) => {
+  const pastedText = event.clipboardData?.getData('text')
+  if (pastedText) {
+    const urls = youtubeService.extractUrlsFromText(pastedText)
+    if (urls.length > 0) {
+      batchUrls.value = urls.join('\n')
+    }
+  }
+}
 
-  isSearching.value = true
-  error.value = ''
-  searchResults.value = []
-  selectedSongs.value = []
+const processBatchUrls = async () => {
+  const urls = batchUrls.value
+    .split('\n')
+    .map(url => url.trim())
+    .filter(url => url)
+
+  if (urls.length === 0) return
+
+  isProcessing.value = true
+  try {
+    const results = await youtubeService.parseBatch(urls)
+    
+    results.successful.forEach(videoInfo => {
+      const exists = pendingSongs.value.some(song => song.youtubeId === videoInfo.id)
+      if (!exists) {
+        pendingSongs.value.push({
+          title: videoInfo.title,
+          artist: videoInfo.artist,
+          thumbnailUrl: videoInfo.thumbnailUrl,
+          url: urls.find(url => url.includes(videoInfo.id)) || '',
+          youtubeId: videoInfo.id
+        })
+      }
+    })
+
+    results.failed.forEach(failure => {
+      pendingSongs.value.push({
+        title: '',
+        url: failure.url,
+        youtubeId: '',
+        error: failure.error
+      })
+    })
+
+    batchUrls.value = ''
+    showBatchInput.value = false
+  } catch (error: any) {
+    console.error('Batch processing failed:', error)
+  } finally {
+    isProcessing.value = false
+  }
+}
+
+const removePendingSong = (index: number) => {
+  pendingSongs.value.splice(index, 1)
+}
+
+const autoFillFromClipboard = async () => {
+  try {
+    const result = await clipboard.autoFillFromClipboard()
+    if (result.success && result.urls.length > 0) {
+      if (result.urls.length === 1) {
+        currentUrl.value = result.urls[0]
+      } else {
+        batchUrls.value = result.urls.join('\n')
+        showBatchInput.value = true
+      }
+      successMessage.value = result.message
+    } else {
+      error.value = result.message
+    }
+  } catch (error: any) {
+    error.value = '無法讀取剪貼簿內容'
+  }
+}
+
+const loadAvailablePlaylists = async () => {
+  try {
+    await playlistStore.fetchPlaylists({ page: 1, limit: 100 })
+    availablePlaylists.value = playlistStore.playlists.filter(
+      p => p.id !== props.playlistId
+    )
+  } catch (error) {
+    console.error('Failed to load playlists:', error)
+  }
+}
+
+const loadSourcePlaylistSongs = async () => {
+  if (!selectedSourcePlaylist.value) return
 
   try {
-    const result = await playlistStore.searchSongs(searchQuery.value.trim())
-    searchResults.value = result.songs || []
-  } catch (err: any) {
-    error.value = err.response?.data?.message || '搜尋失敗'
-  } finally {
-    isSearching.value = false
+    await playlistStore.fetchPlaylistDetail(parseInt(selectedSourcePlaylist.value))
+    sourceSongs.value = playlistStore.currentPlaylist?.songs || []
+    selectedSongs.value = []
+  } catch (error) {
+    console.error('Failed to load source playlist songs:', error)
   }
 }
 
-const toggleSongSelection = (song: any) => {
-  const index = selectedSongs.value.indexOf(song.id)
+const toggleSongSelection = (songId: number) => {
+  const index = selectedSongs.value.indexOf(songId)
   if (index > -1) {
     selectedSongs.value.splice(index, 1)
   } else {
-    selectedSongs.value.push(song.id)
+    selectedSongs.value.push(songId)
   }
 }
 
-const addSelectedSongs = async () => {
-  if (selectedSongs.value.length === 0) return
+const selectAllSourceSongs = () => {
+  selectedSongs.value = sourceSongs.value.map(song => song.song.id)
+}
 
-  isSubmitting.value = true
-  error.value = ''
-  successMessage.value = ''
+const deselectAllSourceSongs = () => {
+  selectedSongs.value = []
+}
 
+const confirmAdd = async () => {
+  isAdding.value = true
+  
   try {
-    for (const songId of selectedSongs.value) {
-      await playlistStore.addSongToPlaylist(props.playlistId, { songId })
+    if (activeTab.value === 'url') {
+      const validSongs = pendingSongs.value.filter(song => !song.error)
+      const urls = validSongs.map(song => song.url)
+      
+      if (urls.length > 0) {
+        await playlistStore.addSongsByYouTubeUrls(props.playlistId, urls)
+        successMessage.value = `成功添加 ${urls.length} 首歌曲`
+      }
+    } else {
+      const songIds = selectedSongs.value
+      await playlistStore.addMultipleSongsToPlaylist(props.playlistId, songIds)
+      successMessage.value = `成功添加 ${songIds.length} 首歌曲`
     }
-    
-    successMessage.value = `成功添加 ${selectedSongs.value.length} 首歌曲`
-    
-    // 清空選擇
-    selectedSongs.value = []
-    
+
     setTimeout(() => {
       emit('added')
     }, 1500)
-  } catch (err: any) {
-    error.value = err.response?.data?.message || '添加失敗'
+  } catch (error: any) {
+    error.value = error.response?.data?.message || '添加失敗'
   } finally {
-    isSubmitting.value = false
+    isAdding.value = false
   }
 }
 
-const formatDuration = (seconds: number) => {
-  if (!seconds) return '--:--'
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = seconds % 60
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+const closeModal = () => {
+  emit('close')
 }
+
+onMounted(() => {
+  loadAvailablePlaylists()
+})
 </script>
 
 <style scoped>
@@ -472,6 +571,347 @@ const formatDuration = (seconds: number) => {
 
 .tab-content {
   min-height: 300px;
+}
+
+.url-input-section {
+  margin-bottom: 1.5rem;
+}
+
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.url-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.add-url-button,
+.clipboard-button {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.2s;
+}
+
+.add-url-button {
+  background: #3b82f6;
+  color: white;
+}
+
+.add-url-button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.add-url-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clipboard-button {
+  background: #6b7280;
+  color: white;
+}
+
+.clipboard-button:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+.clipboard-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.batch-section {
+  margin-bottom: 1.5rem;
+}
+
+.toggle-batch {
+  background: none;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.toggle-batch:hover {
+  background: #f9fafb;
+}
+
+.batch-input {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.batch-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  resize: vertical;
+  margin-bottom: 0.75rem;
+  font-family: inherit;
+}
+
+.pending-songs {
+  margin-top: 1.5rem;
+}
+
+.pending-songs h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.pending-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.pending-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  align-items: center;
+}
+
+.pending-item:last-child {
+  border-bottom: none;
+}
+
+.pending-item.error {
+  background: #fef2f2;
+  border-left: 3px solid #ef4444;
+}
+
+.pending-item .song-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.pending-item .song-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pending-item .thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.pending-item .song-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pending-item .song-info h4 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pending-item .song-info p {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0 0 0.25rem 0;
+}
+
+.pending-item .song-info small {
+  font-size: 0.625rem;
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.remove-button {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background 0.2s;
+}
+
+.remove-button:hover {
+  background: #f3f4f6;
+  color: #dc2626;
+}
+
+.source-playlist-selector {
+  margin-bottom: 1.5rem;
+}
+
+.playlist-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  background: white;
+}
+
+.source-songs {
+  margin-top: 1.5rem;
+}
+
+.songs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.songs-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.select-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background 0.2s;
+}
+
+.btn-link:hover {
+  background: #eff6ff;
+}
+
+.source-songs-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.source-song-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-items: center;
+}
+
+.source-song-item:hover,
+.source-song-item.selected {
+  background: #f9fafb;
+}
+
+.source-song-item:last-child {
+  border-bottom: none;
+}
+
+.source-song-item input[type="checkbox"] {
+  margin: 0;
+}
+
+.source-song-item .song-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.source-song-item .song-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.source-song-item .thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.source-song-item .song-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.source-song-item .song-info h4 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-song-item .song-info p {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.footer-info {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 0.75rem;
 }
 
 .form-group {

@@ -277,6 +277,104 @@ export const usePlaylistStore = defineStore('playlist', () => {
     }
   }
 
+  const addMultipleSongsToPlaylist = async (playlistId: number, songIds: number[]) => {
+    isLoading.value = true
+    error.value = null
+    
+    try {
+      await api.post(`/playlists/${playlistId}/songs/multiple`, { songIds })
+      
+      // Update current playlist if it's the same
+      if (currentPlaylist.value?.id === playlistId) {
+        await fetchPlaylistDetail(playlistId)
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '批量添加歌曲失敗'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const duplicatePlaylist = async (sourcePlaylistId: number, newName?: string) => {
+    isLoading.value = true
+    error.value = null
+    
+    try {
+      const response = await api.post(`/playlists/${sourcePlaylistId}/duplicate`, {
+        name: newName
+      })
+      const newPlaylist = response.data
+      playlists.value.unshift(newPlaylist)
+      return newPlaylist
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '複製播放清單失敗'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const getPlaylistSummary = async (playlistId: number) => {
+    try {
+      const response = await api.get(`/playlists/${playlistId}/summary`)
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '獲取播放清單摘要失敗'
+      throw err
+    }
+  }
+
+  const exportPlaylist = async (playlistId: number, format: 'json' | 'csv' | 'm3u') => {
+    try {
+      const response = await api.get(`/playlists/${playlistId}/export`, {
+        params: { format },
+        responseType: 'blob'
+      })
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '導出播放清單失敗'
+      throw err
+    }
+  }
+
+  const importPlaylist = async (file: File, format: 'json' | 'csv' | 'm3u') => {
+    isLoading.value = true
+    error.value = null
+    
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('format', format)
+      
+      const response = await api.post('/playlists/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      const newPlaylist = response.data
+      playlists.value.unshift(newPlaylist)
+      return newPlaylist
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '導入播放清單失敗'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const getRecommendedSongs = async (playlistId: number, limit = 10) => {
+    try {
+      const response = await api.get(`/playlists/${playlistId}/recommendations`, {
+        params: { limit }
+      })
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '獲取推薦歌曲失敗'
+      throw err
+    }
+  }
+
   const clearError = () => {
     error.value = null
   }
@@ -307,6 +405,12 @@ export const usePlaylistStore = defineStore('playlist', () => {
     removeSongFromPlaylist,
     reorderPlaylistSongs,
     addSongsByYouTubeUrls,
+    addMultipleSongsToPlaylist,
+    duplicatePlaylist,
+    getPlaylistSummary,
+    exportPlaylist,
+    importPlaylist,
+    getRecommendedSongs,
     searchSongs,
     clearError,
     clearCurrentPlaylist
