@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(copy:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(chmod:*)",
+      "Bash(bash:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

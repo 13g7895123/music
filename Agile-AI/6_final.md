@@ -1,0 +1,1 @@
+## 請到Agile-AI資料夾底下，找出名稱編號1~5的腳色，每個腳色會產出對應文件，命名規則為，腳色名稱+"_output.md"，把的所有文件轉換成 Markdown 格式，放在專案的 AAI 資料夾中。每個 Story 都是獨立檔案，按順序編號，比如 001-setup-project .md、002-database-config .md 等等。

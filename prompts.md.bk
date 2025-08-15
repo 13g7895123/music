@@ -1,0 +1,9 @@
+1. 請讀取Agile-AI/1_BA.md，並針對REQUEST.md給與回復，我會透過REQUEST.md交流想法
+2. 如果針對你提到的邀請碼方案，要怎麼實作，請將回復更新進Agile-AI_output/BA_output.md
+3. 如果line bot只有一隻，那這樣qrcode可以生成不同的嗎，line的api是可以吃自定義參數的嗎
+4. read Agile-AI/2_PM.md，finish it
+5. read Agile-AI/3_Architect.md，finish it
+6. 如果架構選擇前端想用nuxt，後端laravel，資料庫mysql的話，應該怎麼修改，或是有甚麼建議
+7. read Agile-AI/4_PO.md，finish it
+8. read Agile-AI/5_Scrum_Master.md，finish it
+9. read Agile-AI/6_final.md，finish it
