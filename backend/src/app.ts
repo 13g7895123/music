@@ -14,33 +14,41 @@ import {
   memoryMonitoringMiddleware,
   requestSizeLimitMiddleware
 } from './middleware/compression.middleware'
+import { 
+  corsOptions, 
+  helmetOptions, 
+  rateLimiters,
+  securityHeaders,
+  csrfProtection,
+  suspiciousActivityDetection,
+  httpParameterPollutionProtection,
+  slowAttackProtection
+} from './middleware/security.middleware'
+import { 
+  xssProtection, 
+  noSqlInjectionProtection 
+} from './middleware/validation.middleware'
 import { logger } from './utils/logger'
+import SecurityUtils from './utils/security'
 
 const app = express()
 const prisma = new PrismaClient()
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
-    },
-  },
-}))
+// 信任代理設定（用於獲取真實IP）
+app.set('trust proxy', 1)
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}))
+// 基礎安全中介軟體
+app.use(helmet(helmetOptions))
+app.use(securityHeaders)
+app.use(cors(corsOptions))
+
+// 安全攻擊防護中介軟體
+app.use(suspiciousActivityDetection)
+app.use(httpParameterPollutionProtection)
+app.use(slowAttackProtection)
+app.use(xssProtection)
+app.use(noSqlInjectionProtection)
+app.use(csrfProtection)
 
 // 效能監控中介軟體（需要在其他中介軟體之前）
 app.use(performanceMiddleware)
@@ -63,33 +71,72 @@ app.use(morgan('combined', {
     write: (message: string) => {
       logger.info(message.trim())
     }
+  },
+  skip: (req) => {
+    // 跳過健康檢查請求的日誌記錄
+    return req.url === '/health'
   }
 }))
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: {
-    error: 'Too many requests from this IP, please try again later.'
-  }
-})
-app.use('/api/', limiter)
+// 不同端點的差異化Rate Limiting
+app.use('/api/auth/login', rateLimiters.auth)
+app.use('/api/auth/register', rateLimiters.register)
+app.use('/api/auth/password-reset', rateLimiters.passwordReset)
+app.use('/api/', rateLimiters.general)
 
 app.get('/health', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`
-    res.status(200).json({
+    
+    const memoryUsage = process.memoryUsage()
+    const healthData = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    })
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      memory: {
+        rss: Math.round(memoryUsage.rss / 1024 / 1024) + 'MB',
+        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
+        heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB'
+      },
+      database: 'connected'
+    }
+    
+    res.status(200).json(SecurityUtils.generateSecureApiResponse(healthData, 'System is healthy'))
   } catch (error) {
-    res.status(503).json({
-      status: 'unhealthy',
-      timestamp: new Date().toISOString()
-    })
+    SecurityUtils.logSecurityEvent('health_check_failed', {
+      error: error.message,
+      ip: SecurityUtils.getClientIP(req)
+    }, 'medium')
+    
+    res.status(503).json(SecurityUtils.generateSecureErrorResponse('Service temporarily unavailable', 'SERVICE_UNAVAILABLE'))
   }
 })
+
+// 安全審計端點（僅限開發環境）
+if (process.env.NODE_ENV === 'development') {
+  app.get('/security-audit', (req, res) => {
+    const audit = {
+      timestamp: new Date().toISOString(),
+      middleware: [
+        'helmet',
+        'cors',
+        'rate-limiting', 
+        'xss-protection',
+        'nosql-injection-protection',
+        'csrf-protection',
+        'suspicious-activity-detection'
+      ],
+      security_headers: SecurityUtils.getSecurityHeaders(),
+      environment: {
+        node_env: process.env.NODE_ENV,
+        trust_proxy: app.get('trust proxy')
+      }
+    }
+    
+    res.json(SecurityUtils.generateSecureApiResponse(audit, 'Security audit complete'))
+  })
+}
 
 // API 路由
 import apiRoutes from './routes'

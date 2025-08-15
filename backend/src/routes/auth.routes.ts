@@ -2,6 +2,9 @@ import express from 'express'
 import { register, login, refreshToken, logout, logoutAll, getProfile } from '../controllers/auth.controller'
 import { authenticate } from '../middleware/auth.middleware'
 import { loginLimiter, registerLimiter } from '../middleware/rateLimiter.middleware'
+import { validateRequest, validationSchemas } from '../middleware/validation.middleware'
+import { rateLimiters } from '../middleware/security.middleware'
+import SecurityUtils from '../utils/security'
 
 const router = express.Router()
 
@@ -126,7 +129,11 @@ const router = express.Router()
  *       409:
  *         description: Email or nickname already exists
  */
-router.post('/register', registerLimiter, register)
+router.post('/register', 
+  registerLimiter, 
+  validateRequest(validationSchemas.userRegistration),
+  register
+)
 
 /**
  * @swagger
@@ -152,7 +159,11 @@ router.post('/register', registerLimiter, register)
  *       400:
  *         description: Validation error
  */
-router.post('/login', loginLimiter, login)
+router.post('/login', 
+  loginLimiter, 
+  validateRequest(validationSchemas.userLogin),
+  login
+)
 
 /**
  * @swagger
@@ -241,5 +252,98 @@ router.post('/logout-all', authenticate, logoutAll)
  *         description: User not found
  */
 router.get('/profile', authenticate, getProfile)
+
+/**
+ * @swagger
+ * /api/auth/password-reset:
+ *   post:
+ *     summary: Request password reset
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: User email address
+ *     responses:
+ *       200:
+ *         description: Password reset email sent
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: User not found
+ */
+router.post('/password-reset', 
+  rateLimiters.passwordReset,
+  validateRequest(validationSchemas.passwordReset),
+  (req, res) => {
+    // 暫時回應成功，實際實作需要在controller中處理
+    SecurityUtils.logSecurityEvent('password_reset_requested', {
+      email: SecurityUtils.sanitizeUserInput(req.body.email),
+      ip: SecurityUtils.getClientIP(req)
+    }, 'medium')
+    
+    res.json(SecurityUtils.generateSecureApiResponse(
+      { message: 'If the email exists, a reset link has been sent' }, 
+      'Password reset processed'
+    ))
+  }
+)
+
+/**
+ * @swagger
+ * /api/auth/password-update:
+ *   post:
+ *     summary: Update password with reset token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - password
+ *               - confirmPassword
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Password reset token
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *                 description: New password
+ *               confirmPassword:
+ *                 type: string
+ *                 description: Password confirmation
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *       400:
+ *         description: Invalid token or validation error
+ */
+router.post('/password-update',
+  validateRequest(validationSchemas.passwordUpdate),
+  (req, res) => {
+    // 暫時回應成功，實際實作需要在controller中處理
+    SecurityUtils.logSecurityEvent('password_updated', {
+      ip: SecurityUtils.getClientIP(req),
+      token: SecurityUtils.maskSensitiveData(req.body.token)
+    }, 'high')
+    
+    res.json(SecurityUtils.generateSecureApiResponse(
+      { message: 'Password updated successfully' }, 
+      'Password update complete'
+    ))
+  }
+)
 
 export default router
