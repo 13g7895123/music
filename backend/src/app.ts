@@ -1,13 +1,19 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
-import compression from 'compression'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
 import { PrismaClient } from '@prisma/client'
 import swaggerUi from 'swagger-ui-express'
 import swaggerJsdoc from 'swagger-jsdoc'
 import { errorHandler, notFoundHandler } from './middleware/error.middleware'
+import { 
+  compressionMiddleware, 
+  staticCacheMiddleware,
+  performanceMiddleware,
+  memoryMonitoringMiddleware,
+  requestSizeLimitMiddleware
+} from './middleware/compression.middleware'
 import { logger } from './utils/logger'
 
 const app = express()
@@ -36,7 +42,19 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }))
 
-app.use(compression())
+// 效能監控中介軟體（需要在其他中介軟體之前）
+app.use(performanceMiddleware)
+app.use(memoryMonitoringMiddleware)
+
+// 壓縮中介軟體
+app.use(compressionMiddleware)
+
+// 靜態資源快取
+app.use(staticCacheMiddleware)
+
+// 請求大小限制
+app.use(requestSizeLimitMiddleware(10)) // 10MB限制
+
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
