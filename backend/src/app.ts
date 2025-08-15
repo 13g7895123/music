@@ -7,7 +7,7 @@ import rateLimit from 'express-rate-limit'
 import { PrismaClient } from '@prisma/client'
 import swaggerUi from 'swagger-ui-express'
 import swaggerJsdoc from 'swagger-jsdoc'
-import { errorHandler } from './middleware/error.middleware'
+import { errorHandler, notFoundHandler } from './middleware/error.middleware'
 import { logger } from './utils/logger'
 
 const app = express()
@@ -75,7 +75,10 @@ app.get('/health', async (req, res) => {
 
 // API 路由
 import apiRoutes from './routes'
+import errorRoutes from './routes/errors'
+
 app.use('/api', apiRoutes)
+app.use('/api/errors', errorRoutes)
 
 app.get('/api/v1/status', (req, res) => {
   res.json({
@@ -107,6 +110,10 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJsdoc(swaggerOptions)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
+// 404 處理器（必須在錯誤處理器之前）
+app.use(notFoundHandler)
+
+// 錯誤處理器（必須是最後一個中間件）
 app.use(errorHandler)
 
 export { app, prisma }

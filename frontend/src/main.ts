@@ -6,6 +6,9 @@ import { useAuthStore } from './stores/auth'
 import './style.css'
 import './styles/main.scss'
 
+// 初始化錯誤處理器
+import './utils/errorHandler'
+
 const app = createApp(App)
 const pinia = createPinia()
 

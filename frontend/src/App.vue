@@ -13,7 +13,9 @@
     <!-- 主要內容區 -->
     <main class="main-content" :class="{ 'with-mobile-nav': isMobile }">
       <div class="container">
-        <router-view />
+        <ErrorBoundary>
+          <router-view />
+        </ErrorBoundary>
       </div>
     </main>
     
@@ -35,6 +37,7 @@ import { useBreakpoints, getBreakpointClasses } from '@/composables/useBreakpoin
 import PlayerSync from '@/components/player/PlayerSync.vue'
 import PlayerBar from '@/components/layout/PlayerBar.vue'
 import MobileNav from '@/components/layout/MobileNav.vue'
+import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 
 const appName = ref(import.meta.env.VITE_APP_NAME || 'YouTube Music Player')
 const playerStore = usePlayerStore()
