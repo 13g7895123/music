@@ -16,7 +16,13 @@
       "Bash(npm --version)",
       "Bash(docker:*)",
       "Bash(git --version)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

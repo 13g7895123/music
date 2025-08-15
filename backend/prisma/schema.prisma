@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  email          String    @unique @db.VarChar(255)
+  passwordHash   String    @map("password_hash") @db.VarChar(255)
+  nickname       String    @db.VarChar(50)
+  avatarUrl      String?   @map("avatar_url") @db.VarChar(500)
+  preferences    Json      @default("{}")
+  isActive       Boolean   @default(true) @map("is_active")
+  emailVerified  Boolean   @default(false) @map("email_verified")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  playlists      Playlist[]
+  playHistory    PlayHistory[]
+  sessions       Session[]
+  playlistSongs  PlaylistSong[]
+
+  @@map("users")
+}
+
+model Playlist {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  name            String   @db.VarChar(100)
+  description     String?
+  coverUrl        String?  @map("cover_url") @db.VarChar(500)
+  isPublic        Boolean  @default(false) @map("is_public")
+  isCollaborative Boolean  @default(false) @map("is_collaborative")
+  totalDuration   Int      @default(0) @map("total_duration")
+  songCount       Int      @default(0) @map("song_count")
+  playCount       Int      @default(0) @map("play_count")
+  metadata        Json     @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  songs           PlaylistSong[]
+  playHistory     PlayHistory[]
+
+  @@map("playlists")
+}
+
+model Song {
+  id           Int       @id @default(autoincrement())
+  youtubeId    String    @unique @map("youtube_id") @db.VarChar(20)
+  title        String    @db.VarChar(200)
+  artist       String?   @db.VarChar(200)
+  duration     Int?
+  thumbnailUrl String?   @map("thumbnail_url") @db.VarChar(500)
+  channelName  String?   @map("channel_name") @db.VarChar(200)
+  viewCount    BigInt?   @map("view_count")
+  publishedAt  DateTime? @map("published_at")
+  metadata     Json      @default("{}")
+  isAvailable  Boolean   @default(true) @map("is_available")
+  lastChecked  DateTime  @default(now()) @map("last_checked")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  playlists    PlaylistSong[]
+  playHistory  PlayHistory[]
+
+  @@map("songs")
+}
+
+model PlaylistSong {
+  id         Int      @id @default(autoincrement())
+  playlistId Int      @map("playlist_id")
+  songId     Int      @map("song_id")
+  position   Int
+  addedBy    Int?     @map("added_by")
+  addedAt    DateTime @default(now()) @map("added_at")
+
+  // Relations
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  song       Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [addedBy], references: [id])
+
+  @@unique([playlistId, position])
+  @@unique([playlistId, songId])
+  @@map("playlist_songs")
+}
+
+model PlayHistory {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  songId       Int       @map("song_id")
+  playlistId   Int?      @map("playlist_id")
+  playedAt     DateTime  @default(now()) @map("played_at")
+  playDuration Int?      @map("play_duration")
+  completed    Boolean   @default(false)
+
+  // Relations
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song         Song      @relation(fields: [songId], references: [id], onDelete: Cascade)
+  playlist     Playlist? @relation(fields: [playlistId], references: [id], onDelete: SetNull)
+
+  @@map("play_history")
+}
+
+model Session {
+  id        String   @id @db.VarChar(128)
+  userId    Int      @map("user_id")
+  data      Json
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}

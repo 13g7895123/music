@@ -1,36 +1,42 @@
 import dotenv from 'dotenv'
-import { app } from './app'
 
-// 載入環境變數
-dotenv.config()
+dotenv.config({ path: '../.env' })
 
-const PORT = process.env.PORT || 3000
+import { app, prisma } from './app'
+import { logger } from './utils/logger'
 
-// 優雅關閉處理
-const gracefulShutdown = (signal: string) => {
-  console.log(`Received ${signal}. Shutting down gracefully...`)
-  
-  server.close(() => {
-    console.log('Process terminated')
-    process.exit(0)
-  })
+const PORT = process.env.BACKEND_PORT || 3000
 
-  // 強制關閉 (30秒後)
-  setTimeout(() => {
-    console.error('Could not close connections in time, forcefully shutting down')
+async function startServer() {
+  try {
+    app.listen(PORT, () => {
+      logger.info(`Server is running on port ${PORT}`)
+      logger.info(`Health check: http://localhost:${PORT}/health`)
+      logger.info(`API docs: http://localhost:${PORT}/api-docs`)
+    })
+    
+    try {
+      await prisma.$connect()
+      logger.info('Database connected successfully')
+    } catch (dbError) {
+      logger.warn('Database connection failed, server will run without database:', dbError)
+    }
+  } catch (error) {
+    logger.error('Failed to start server:', error)
     process.exit(1)
-  }, 30000)
+  }
 }
 
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`)
-  console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`)
-  console.log(`📖 API: http://localhost:${PORT}/api/v1/status`)
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM received, shutting down gracefully')
+  await prisma.$disconnect()
+  process.exit(0)
 })
 
-// 優雅關閉監聽
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
-process.on('SIGINT', () => gracefulShutdown('SIGINT'))
+process.on('SIGINT', async () => {
+  logger.info('SIGINT received, shutting down gracefully')
+  await prisma.$disconnect()
+  process.exit(0)
+})
 
-export { server }
+startServer()

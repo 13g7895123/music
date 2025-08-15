@@ -14,3 +14,13 @@
      - 所有的 git commit 不要加入 claude code 協作
    - 調整 docker-compose 不要有 version
    - 所有 docker-compose 的 output port 幫我寫入.env 的最上面，我要自定義調整
+10. 出現以下錯誤
+    ✘ postgres Error context canceled 22.1s
+    ✘ adminer Error Get "https://registry-1.docker.io/v2/": dialing registry-1.docker.io:443 container via direct co... 22.1s
+    Error response from daemon: Get "https://registry-1.docker.io/v2/": dialing registry-1.docker.io:443 container via direct connection because static system has no HTTPS proxy: resolving host registry-1.docker.io: lookup registry-1.docker.io: no such host
+11. read AAI/002 開頭的檔案，finish it
+12. read AAI/003 開頭的檔案，finish it
+13. 幫我確認第六點執行項目，我看他目前生成的story只有1~5，後面都沒有生成，請幫我確認並補上
+14. 請繼續補上所有的story
+15. 為甚麼18~21沒有生成
+16. 先幫我add commit push，再幫我從AAI/004開頭的檔案開始，往下執行，005、006、007直到專案完成
