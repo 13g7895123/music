@@ -51,6 +51,7 @@ model Playlist {
   songs           PlaylistSong[]
   playHistory     PlayHistory[]
 
+  @@unique([userId, name])
   @@map("playlists")
 }
 
