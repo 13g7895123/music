@@ -238,6 +238,10 @@ export const usePlayerStore = defineStore('player', () => {
     queue.value = []
   }
 
+  const updateQueue = (newQueue: Song[]) => {
+    queue.value = newQueue
+  }
+
   const shufflePlaylist = () => {
     if (!currentPlaylist.value) return
     
@@ -386,6 +390,7 @@ export const usePlayerStore = defineStore('player', () => {
     addToQueue,
     removeFromQueue,
     clearQueue,
+    updateQueue,
     shufflePlaylist,
     toggleShuffle,
     toggleRepeat,
