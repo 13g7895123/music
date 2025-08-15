@@ -9,3 +9,8 @@
    - git 沒有連線到指定專案
    - docker 裡面沒有看到後端與前端
    - 幫我針對上述問題確認並執行
+9. 幫我完成已下修改
+   - 幫我建立 CLAUDE.md 檔案，並加入以下規則
+     - 所有的 git commit 不要加入 claude code 協作
+   - 調整 docker-compose 不要有 version
+   - 所有 docker-compose 的 output port 幫我寫入.env 的最上面，我要自定義調整

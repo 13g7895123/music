@@ -199,6 +199,13 @@ npm run db:reset       # 重置資料庫
 複製 `.env.example` 到 `.env` 並配置以下變數：
 
 ```env
+# Docker 服務連接埠設定 (可自定義調整)
+POSTGRES_PORT=5432
+REDIS_PORT=6379
+BACKEND_PORT=3000
+FRONTEND_PORT=5173
+ADMINER_PORT=8080
+
 # 資料庫配置
 DATABASE_URL="postgresql://user:password@localhost:5432/musicplayer"
 
@@ -216,6 +223,14 @@ PORT=3000
 # 開發配置
 NODE_ENV=development
 ```
+
+### 🔧 自定義連接埠
+您可以透過修改 `.env` 檔案中的連接埠設定來避免衝突：
+- `POSTGRES_PORT`: PostgreSQL 資料庫連接埠 (預設: 5432)
+- `REDIS_PORT`: Redis 快取連接埠 (預設: 6379)
+- `BACKEND_PORT`: 後端 API 連接埠 (預設: 3000)
+- `FRONTEND_PORT`: 前端應用連接埠 (預設: 5173)
+- `ADMINER_PORT`: 資料庫管理界面連接埠 (預設: 8080)
 
 ## 🧪 測試
 

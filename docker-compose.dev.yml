@@ -1,20 +1,18 @@
-version: '3.8'
-
 services:
   # 資料庫服務
   postgres:
     image: postgres:15-alpine
     container_name: musicplayer-postgres
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: musicplayer
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-musicplayer}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d musicplayer"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-musicplayer}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,7 +22,7 @@ services:
     image: redis:7-alpine
     container_name: musicplayer-redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -41,15 +39,15 @@ services:
       dockerfile: Dockerfile.dev
     container_name: musicplayer-backend
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT:-3000}:3000"
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://user:password@postgres:5432/musicplayer
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-musicplayer}
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=your-super-secret-jwt-key-min-32-chars
-      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-min-32-chars
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-min-32-chars}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-min-32-chars}
       - PORT=3000
-      - FRONTEND_URL=http://localhost:5173
+      - FRONTEND_URL=http://localhost:${FRONTEND_PORT:-5173}
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -68,10 +66,10 @@ services:
       dockerfile: Dockerfile.dev
     container_name: musicplayer-frontend
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:5173"
     environment:
-      - VITE_API_URL=http://localhost:3000
-      - VITE_APP_NAME=YouTube Music Player
+      - VITE_API_URL=http://localhost:${BACKEND_PORT:-3000}
+      - VITE_APP_NAME=${VITE_APP_NAME:-YouTube Music Player}
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -85,7 +83,7 @@ services:
     image: adminer:latest
     container_name: musicplayer-adminer
     ports:
-      - "8080:8080"
+      - "${ADMINER_PORT:-8080}:8080"
     depends_on:
       - postgres
     environment:
