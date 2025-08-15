@@ -22,7 +22,8 @@
       "Bash(npx prisma generate:*)",
       "Bash(npm run dev:*)",
       "Bash(npx kill-port:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(timeout 10 npm run dev)"
     ],
     "deny": [],
     "ask": []

@@ -4,12 +4,18 @@ import { logger } from '../utils/logger'
 export class AppError extends Error {
   statusCode: number
   isOperational: boolean
+  code: string
 
-  constructor(message: string, statusCode: number) {
+  constructor(message: string, statusCode: number, code?: string) {
     super(message)
     this.statusCode = statusCode
     this.isOperational = true
+    this.code = code || 'UNKNOWN_ERROR'
   }
+}
+
+export const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
+  Promise.resolve(fn(req, res, next)).catch(next)
 }
 
 export const errorHandler = (

@@ -73,6 +73,10 @@ app.get('/health', async (req, res) => {
   }
 })
 
+// API 路由
+import apiRoutes from './routes'
+app.use('/api', apiRoutes)
+
 app.get('/api/v1/status', (req, res) => {
   res.json({
     success: true,
