@@ -5,6 +5,7 @@ import { validatePlaylist, validatePlaylistUpdate } from '../middleware/validati
 import { asyncHandler } from '../middleware/error.middleware'
 import { PlaylistService } from '../services/playlist.service'
 import { AuthRequest } from '../middleware/auth.middleware'
+import playlistSongsRoutes from './playlist-songs.routes'
 
 const router = express.Router()
 const prisma = new PrismaClient()
@@ -402,5 +403,8 @@ router.delete('/:id', authenticate, asyncHandler(async (req: AuthRequest, res) =
     message: 'Playlist deleted successfully'
   })
 }))
+
+// Mount playlist songs routes
+router.use('/', playlistSongsRoutes)
 
 export default router
