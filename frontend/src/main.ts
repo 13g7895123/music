@@ -4,6 +4,7 @@ import router from './router'
 import { createPinia } from 'pinia'
 import { useAuthStore } from './stores/auth'
 import './style.css'
+import './styles/main.scss'
 
 const app = createApp(App)
 const pinia = createPinia()

@@ -1,0 +1,574 @@
+// 行動裝置專用樣式
+@import './responsive.scss';
+
+// 全域行動裝置設定
+@include respond-to(xs) {
+  // 基本字體和大小調整
+  html {
+    font-size: 14px; // 減小基本字體大小
+  }
+  
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation; // 優化觸控響應
+  }
+
+  // 移除點擊高亮
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  // 輸入框和文字區域允許選擇
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+// 觸控按鈕樣式
+.btn-touch {
+  min-height: 44px; // iOS 建議的最小觸控目標
+  min-width: 44px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 16px; // 防止 iOS 自動縮放
+  border: none;
+  background: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:active {
+    transform: scale(0.98);
+    background: var(--primary-color-dark);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+// 行動裝置輸入框
+.input-mobile {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px; // 防止 iOS 縮放
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+  }
+  
+  &::placeholder {
+    color: var(--text-secondary);
+    opacity: 1;
+  }
+}
+
+// 行動裝置卡片
+.card-mobile {
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 16px;
+  
+  .card-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card-header);
+  }
+  
+  .card-body {
+    padding: 16px;
+  }
+  
+  .card-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-card-footer);
+  }
+}
+
+// 行動裝置清單
+.list-mobile {
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  
+  .list-item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background 0.2s;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    &:active {
+      background: var(--bg-hover);
+    }
+    
+    .list-icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 16px;
+      flex-shrink: 0;
+    }
+    
+    .list-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .list-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin: 0 0 4px 0;
+      color: var(--text-primary);
+    }
+    
+    .list-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    
+    .list-action {
+      margin-left: 16px;
+      flex-shrink: 0;
+    }
+  }
+}
+
+// 行動裝置導航
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-nav);
+  border-top: 1px solid var(--border-color);
+  padding: 8px 0;
+  z-index: 1000;
+  
+  .nav-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+    min-width: 44px;
+    
+    &.active {
+      color: var(--primary-color);
+    }
+    
+    .nav-icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+    
+    .nav-label {
+      font-size: 12px;
+      font-weight: 500;
+    }
+  }
+}
+
+// 側邊欄 (行動裝置)
+.sidebar-mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 1100;
+  
+  &.open {
+    transform: translateX(0);
+  }
+  
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .sidebar-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    
+    &:active {
+      background: var(--bg-hover);
+    }
+  }
+  
+  .sidebar-content {
+    padding: 16px 0;
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+}
+
+// 側邊欄遮罩
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1099;
+}
+
+// 行動裝置模態框
+.modal-mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  
+  .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+  }
+  
+  .modal-content {
+    width: 100%;
+    background: var(--bg-modal);
+    border-radius: 16px 16px 0 0;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--border-color);
+      border-radius: 2px;
+      margin: 12px auto 8px;
+    }
+    
+    .modal-header {
+      padding: 16px 16px 8px;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .modal-body {
+      padding: 16px;
+    }
+  }
+}
+
+// 行動裝置表單
+.form-mobile {
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  
+  .form-control {
+    @extend .input-mobile;
+  }
+  
+  .form-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+  
+  .form-error {
+    font-size: 14px;
+    color: var(--error-color);
+    margin-top: 6px;
+  }
+}
+
+// 行動裝置載入狀態
+.loading-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+  
+  .loading-text {
+    color: var(--text-secondary);
+    font-size: 16px;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// 行動裝置錯誤狀態
+.error-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  
+  .error-icon {
+    font-size: 48px;
+    color: var(--error-color);
+    margin-bottom: 16px;
+  }
+  
+  .error-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+  
+  .error-message {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  
+  .error-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+// 行動裝置空狀態
+.empty-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  
+  .empty-icon {
+    font-size: 64px;
+    color: var(--text-tertiary);
+    margin-bottom: 20px;
+  }
+  
+  .empty-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+  
+  .empty-message {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+}
+
+// 行動裝置搜尋框
+.search-mobile {
+  position: relative;
+  margin-bottom: 16px;
+  
+  .search-input {
+    @extend .input-mobile;
+    padding-left: 44px;
+    padding-right: 44px;
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 18px;
+  }
+  
+  .search-clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    
+    &:active {
+      background: var(--bg-hover);
+    }
+  }
+}
+
+// 行動裝置滑動手勢
+.swipe-item {
+  position: relative;
+  overflow: hidden;
+  
+  .swipe-content {
+    transition: transform 0.3s ease;
+  }
+  
+  .swipe-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    background: var(--error-color);
+    
+    .swipe-action {
+      padding: 0 20px;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      background: none;
+      border: none;
+      cursor: pointer;
+      height: 100%;
+      
+      &:active {
+        opacity: 0.8;
+      }
+    }
+  }
+}
+
+// 行動裝置特殊處理
+@media (max-width: 767px) {
+  // 隱藏桌面版導航
+  .desktop-nav {
+    display: none !important;
+  }
+  
+  // 調整主要內容區域
+  .main-content {
+    padding-bottom: 160px; // 底部導航 + 播放器空間
+  }
+  
+  // 調整播放器欄
+  .player-bar {
+    bottom: 60px; // 在底部導航上方
+  }
+  
+  // 全寬表單
+  .form-container {
+    padding: 16px;
+  }
+  
+  // 調整間距
+  .container {
+    padding: 0 16px;
+  }
+  
+  // 調整字體大小
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  h4 { font-size: 1.125rem; }
+  h5 { font-size: 1rem; }
+  h6 { font-size: 0.875rem; }
+}
+
+// iOS 特殊處理
+@supports (-webkit-overflow-scrolling: touch) {
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  // 修復 iOS Safari 的 100vh 問題
+  .full-height {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+  
+  // iOS 安全區域適配
+  @supports (padding: max(0px)) {
+    .safe-area-top {
+      padding-top: max(20px, env(safe-area-inset-top));
+    }
+    
+    .safe-area-bottom {
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+    
+    .safe-area-left {
+      padding-left: max(16px, env(safe-area-inset-left));
+    }
+    
+    .safe-area-right {
+      padding-right: max(16px, env(safe-area-inset-right));
+    }
+  }
+}
