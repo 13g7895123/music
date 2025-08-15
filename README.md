@@ -386,6 +386,32 @@ curl http://localhost:3000/health
 
 ### 生產環境配置
 
+#### 完整生產環境部署
+
+本專案提供完整的生產環境部署解決方案，包含：
+- Nginx 反向代理和 SSL 終止
+- PostgreSQL 高效能配置
+- Redis 快取優化
+- Prometheus + Grafana 監控
+- Loki + Promtail 日誌收集
+- 自動化備份策略
+
+#### 部署生產環境
+
+```bash
+# 1. 複製生產環境配置
+cp .env.production.example .env.production
+
+# 2. 編輯生產環境變數
+nano .env.production
+
+# 3. 部署到生產環境
+npm run deploy:production
+
+# 或使用腳本直接部署
+./scripts/deploy-production.sh
+```
+
 #### 必要的環境變數
 ```env
 NODE_ENV=production
@@ -397,6 +423,48 @@ ENCRYPTION_SECRET=your_encryption_secret
 PASSWORD_PEPPER=your_password_pepper
 FRONTEND_URL=https://yourdomain.com
 ALLOWED_ORIGINS=https://yourdomain.com
+GRAFANA_PASSWORD=your_secure_grafana_password
+```
+
+#### SSL 憑證配置
+
+1. **Let's Encrypt (推薦)**
+   ```bash
+   # 安裝 certbot
+   sudo apt install certbot python3-certbot-nginx
+   
+   # 取得憑證
+   sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+   
+   # 將憑證複製到專案目錄
+   sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem ./nginx/ssl/
+   sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem ./nginx/ssl/
+   ```
+
+2. **自有憑證**
+   ```bash
+   # 將憑證放入 nginx/ssl/ 目錄
+   cp your-cert.pem ./nginx/ssl/fullchain.pem
+   cp your-key.pem ./nginx/ssl/privkey.pem
+   ```
+
+#### 生產環境管理命令
+
+```bash
+# 啟動生產服務
+npm run prod:up
+
+# 停止生產服務
+npm run prod:down
+
+# 檢查服務狀態
+npm run prod:status
+
+# 查看服務日誌
+npm run prod:logs
+
+# 執行資料庫備份
+npm run backup
 ```
 
 #### 安全考量
@@ -405,6 +473,8 @@ ALLOWED_ORIGINS=https://yourdomain.com
 - 設定防火牆規則
 - 定期更新系統和依賴
 - 監控日誌和效能指標
+- 限制 SSH 存取
+- 設定自動安全更新
 
 ### 監控和維護
 
@@ -427,10 +497,36 @@ docker-compose logs postgres
 ```
 
 #### 效能監控
-- 應用程式健康檢查端點: `/health`
-- Prometheus 指標: `http://localhost:9090` (如果啟用)
-- 資料庫連線監控
-- Redis 記憶體使用監控
+
+本專案內建完整的監控解決方案：
+
+1. **Prometheus 指標收集**
+   - 網址: `http://localhost:9090`
+   - 收集應用程式、資料庫、Redis 的效能指標
+   - 自定義警報規則
+
+2. **Grafana 視覺化儀表板**
+   - 網址: `http://localhost:3001`
+   - 預設帳號: admin
+   - 密碼: 設定於 `GRAFANA_PASSWORD` 環境變數
+   - 包含預設的監控儀表板
+
+3. **日誌管理 (Loki + Promtail)**
+   - 集中化日誌收集
+   - 應用程式、Nginx、系統日誌
+   - 與 Grafana 整合查詢
+
+4. **健康檢查端點**
+   - 應用程式健康檢查: `/health`
+   - 自動化監控和告警
+   - Docker 容器健康檢查
+
+#### 監控指標
+- API 回應時間和錯誤率
+- 資料庫連線和查詢效能
+- Redis 記憶體使用和命中率
+- 系統資源使用狀況
+- 用戶活動和業務指標
 
 ## 🤝 開發流程
 

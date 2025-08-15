@@ -26,7 +26,14 @@
     "setup": "bash scripts/setup.sh",
     "docker:up": "docker-compose -f docker-compose.dev.yml up -d",
     "docker:down": "docker-compose -f docker-compose.dev.yml down",
-    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f"
+    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "deploy:staging": "bash scripts/deploy.sh staging deploy",
+    "deploy:production": "bash scripts/deploy-production.sh",
+    "prod:up": "docker-compose -f docker-compose.production.yml up -d",
+    "prod:down": "docker-compose -f docker-compose.production.yml down",
+    "prod:logs": "docker-compose -f docker-compose.production.yml logs -f",
+    "prod:status": "docker-compose -f docker-compose.production.yml ps",
+    "backup": "bash scripts/backup.sh"
   },
   "keywords": [
     "youtube",
