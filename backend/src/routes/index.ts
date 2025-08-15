@@ -2,6 +2,7 @@ import { Router } from 'express'
 import authRoutes from './auth.routes'
 import playlistRoutes from './playlists.routes'
 import songsRoutes from './songs.routes'
+import youtubeRoutes from './youtube.routes'
 
 const router = Router()
 
@@ -22,6 +23,9 @@ router.use('/playlists', playlistRoutes)
 
 // 歌曲路由
 router.use('/songs', songsRoutes)
+
+// YouTube 路由
+router.use('/youtube', youtubeRoutes)
 
 export { router }
 export default router
