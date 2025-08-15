@@ -27,7 +27,8 @@
       "Bash(timeout 10 npm run dev)",
       "Bash(npx prisma migrate dev:*)",
       "Bash(npx vite:*)",
-      "Bash(timeout 15 npm run dev)"
+      "Bash(timeout 15 npm run dev)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": [],
