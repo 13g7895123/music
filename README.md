@@ -296,15 +296,141 @@ npx prettier --write .
 
 ## 🚀 部署
 
-### 生產建構
+### CI/CD 自動化部署
+
+本專案使用 GitHub Actions 實現完全自動化的 CI/CD 流程：
+
+#### 自動化流程
+- **程式碼品質檢查**: ESLint、TypeScript 類型檢查
+- **自動測試**: 單元測試、整合測試、E2E 測試
+- **安全性掃描**: Trivy 漏洞掃描、npm audit
+- **Docker 映像建置**: 自動建置並推送到 GitHub Container Registry
+- **自動部署**: staging 環境自動部署，production 需手動確認
+
+#### 部署環境
+
+1. **開發環境 (Development)**
+   ```bash
+   # 啟動開發環境
+   npm run dev
+   ```
+
+2. **測試環境 (Testing)**
+   ```bash
+   # 運行測試環境
+   docker-compose -f docker-compose.test.yml up -d
+   ```
+
+3. **預備環境 (Staging)**
+   ```bash
+   # 部署到預備環境
+   ./scripts/deploy.sh staging deploy
+   ```
+
+4. **生產環境 (Production)**
+   ```bash
+   # 部署到生產環境
+   ./scripts/deploy.sh production deploy
+   ```
+
+### 手動部署
+
+#### 1. 建構應用程式
 ```bash
 # 建構前端和後端
 npm run build
 
-# 檢查建構結果
-ls frontend/dist
-ls backend/dist
+# 建構 Docker 映像
+docker-compose -f docker-compose.prod.yml build
 ```
+
+#### 2. 配置環境變數
+```bash
+# 複製並配置生產環境變數
+cp .env.production.example .env.production
+nano .env.production
+```
+
+#### 3. 部署服務
+```bash
+# 啟動生產服務
+docker-compose -f docker-compose.prod.yml up -d
+
+# 檢查服務狀態
+docker-compose -f docker-compose.prod.yml ps
+```
+
+#### 4. 健康檢查
+```bash
+# 檢查應用程式健康狀態
+curl http://localhost/health
+curl http://localhost:3000/health
+```
+
+### 部署腳本
+
+使用內建的部署腳本進行自動化部署：
+
+```bash
+# 部署到指定環境
+./scripts/deploy.sh [environment] [action]
+
+# 可用的環境: staging, production
+# 可用的操作: deploy, rollback, status, logs, backup, cleanup, health
+
+# 範例
+./scripts/deploy.sh production deploy    # 部署到生產環境
+./scripts/deploy.sh staging rollback     # 回滾預備環境
+./scripts/deploy.sh production status    # 檢查生產環境狀態
+```
+
+### 生產環境配置
+
+#### 必要的環境變數
+```env
+NODE_ENV=production
+DATABASE_URL=postgresql://user:pass@localhost:5432/musicplayer
+REDIS_URL=redis://:password@localhost:6379
+JWT_SECRET=your_super_secure_jwt_secret
+JWT_REFRESH_SECRET=your_super_secure_refresh_secret
+ENCRYPTION_SECRET=your_encryption_secret
+PASSWORD_PEPPER=your_password_pepper
+FRONTEND_URL=https://yourdomain.com
+ALLOWED_ORIGINS=https://yourdomain.com
+```
+
+#### 安全考量
+- 使用強密碼和金鑰
+- 配置 SSL/TLS 證書
+- 設定防火牆規則
+- 定期更新系統和依賴
+- 監控日誌和效能指標
+
+### 監控和維護
+
+#### 日誌管理
+```bash
+# 查看應用程式日誌
+docker-compose logs -f backend frontend
+
+# 查看特定服務日誌
+docker-compose logs postgres
+```
+
+#### 備份和恢復
+```bash
+# 手動備份資料庫
+./scripts/deploy.sh production backup
+
+# 自動備份 (每日執行)
+# 備份文件儲存在 ./backups/ 目錄
+```
+
+#### 效能監控
+- 應用程式健康檢查端點: `/health`
+- Prometheus 指標: `http://localhost:9090` (如果啟用)
+- 資料庫連線監控
+- Redis 記憶體使用監控
 
 ## 🤝 開發流程
 

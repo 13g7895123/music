@@ -28,4 +28,4 @@
 18. 從AAI/012開頭的檔案開始，依據往下執行，013、014，直到完成全部story，每執行完一個，都幫我add commit push。
 19. 從AAI/015開頭的檔案開始，依據往下執行，013、014..023，直到完成全部story，每執行完一個，都幫我add commit push。
 20. add commit push
-21. 從AAI/016開頭的檔案開始，依據往下執行，017、018..023，直到完成全部story，每執行完一個，都幫我add commit push。
+21. 從AAI/021開頭的檔案開始，依據往下執行，022、023，直到完成全部story，請確保docker-compose沒有version，每執行完一個，都幫我add commit push。
