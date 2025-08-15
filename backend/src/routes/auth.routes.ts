@@ -1,6 +1,7 @@
 import express from 'express'
 import { register, login, refreshToken, logout, logoutAll, getProfile } from '../controllers/auth.controller'
 import { authenticate } from '../middleware/auth.middleware'
+import { loginLimiter, registerLimiter } from '../middleware/rateLimiter.middleware'
 
 const router = express.Router()
 
@@ -125,7 +126,7 @@ const router = express.Router()
  *       409:
  *         description: Email or nickname already exists
  */
-router.post('/register', register)
+router.post('/register', registerLimiter, register)
 
 /**
  * @swagger
@@ -151,7 +152,7 @@ router.post('/register', register)
  *       400:
  *         description: Validation error
  */
-router.post('/login', login)
+router.post('/login', loginLimiter, login)
 
 /**
  * @swagger

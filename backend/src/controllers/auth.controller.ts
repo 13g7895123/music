@@ -70,16 +70,44 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   // 查找用戶
   const user = await userService.findUserByEmail(email)
   
-  if (!user || !user.isActive) {
+  if (!user) {
     throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS')
+  }
+
+  // 檢查帳號狀態
+  if (!user.isActive) {
+    throw new AppError('Account is disabled', 401, 'ACCOUNT_DISABLED')
+  }
+
+  // 檢查登入嘗試次數和鎖定狀態
+  const maxAttempts = 5
+  const lockoutTime = 30 * 60 * 1000 // 30分鐘
+
+  if (user.loginAttempts >= maxAttempts && user.lastLoginAttempt) {
+    const timeSinceLastAttempt = Date.now() - user.lastLoginAttempt.getTime()
+    if (timeSinceLastAttempt < lockoutTime) {
+      const remainingTime = Math.ceil((lockoutTime - timeSinceLastAttempt) / 1000 / 60)
+      throw new AppError(`Account temporarily locked. Try again in ${remainingTime} minutes`, 423, 'ACCOUNT_LOCKED')
+    }
   }
 
   // 驗證密碼
   const isPasswordValid = await userService.verifyPassword(password, user.passwordHash)
   
   if (!isPasswordValid) {
-    throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS')
+    // 更新失敗嘗試次數
+    await userService.updateLoginAttempts(user.id, user.loginAttempts + 1)
+    
+    const remainingAttempts = maxAttempts - (user.loginAttempts + 1)
+    if (remainingAttempts > 0) {
+      throw new AppError(`Invalid email or password. ${remainingAttempts} attempts remaining`, 401, 'INVALID_CREDENTIALS')
+    } else {
+      throw new AppError('Account temporarily locked due to too many failed attempts', 423, 'ACCOUNT_LOCKED')
+    }
   }
+
+  // 重置登入嘗試次數並更新最後登入時間
+  await userService.resetLoginAttempts(user.id)
 
   // 生成JWT Token
   const tokens = await jwtService.generateTokens(

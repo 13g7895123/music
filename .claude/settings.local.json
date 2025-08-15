@@ -23,7 +23,8 @@
       "Bash(npm run dev:*)",
       "Bash(npx kill-port:*)",
       "Bash(curl:*)",
-      "Bash(timeout 10 npm run dev)"
+      "Bash(timeout 10 npm run dev)",
+      "Bash(npx prisma migrate dev:*)"
     ],
     "deny": [],
     "ask": []

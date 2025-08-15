@@ -190,4 +190,46 @@ export class UserService {
       throw new AppError('Failed to deactivate user', 500, 'USER_DEACTIVATION_FAILED')
     }
   }
+
+  async updateLoginAttempts(userId: number, attempts: number): Promise<void> {
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          loginAttempts: attempts,
+          lastLoginAttempt: new Date()
+        }
+      })
+
+      logger.warn(`Login attempt recorded for user ${userId}`, { 
+        userId,
+        attempts 
+      })
+    } catch (error) {
+      logger.error('Failed to update login attempts', { 
+        userId,
+        error: (error as Error).message 
+      })
+    }
+  }
+
+  async resetLoginAttempts(userId: number): Promise<void> {
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          loginAttempts: 0,
+          lastLoginAt: new Date(),
+          lastLoginAttempt: new Date()
+        }
+      })
+
+      logger.info(`Login attempts reset for user ${userId}`)
+    } catch (error) {
+      logger.error('Failed to reset login attempts', { 
+        userId,
+        error: (error as Error).message 
+      })
+    }
+  }
 }
