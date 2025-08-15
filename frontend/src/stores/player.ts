@@ -32,6 +32,7 @@ interface PlayerCommands {
   pause?: boolean
   volume?: number
   seekTo?: number
+  loadVideo?: string
 }
 
 export const usePlayerStore = defineStore('player', () => {
@@ -348,6 +349,127 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
+  // 狀態同步方法
+  const setCurrentSong = (song: Song | null) => {
+    currentSong.value = song
+    saveToLocalStorage()
+  }
+
+  const setQueue = (newQueue: Song[]) => {
+    queue.value = newQueue
+    saveToLocalStorage()
+  }
+
+  const setRepeatMode = (mode: 'none' | 'one' | 'all') => {
+    repeatMode.value = mode
+    saveToLocalStorage()
+  }
+
+  const setShuffle = (shuffle: boolean) => {
+    isShuffle.value = shuffle
+    saveToLocalStorage()
+  }
+
+  const handleStateChange = (state: number) => {
+    const YT_PLAYER_STATE = {
+      UNSTARTED: -1,
+      ENDED: 0,
+      PLAYING: 1,
+      PAUSED: 2,
+      BUFFERING: 3,
+      CUED: 5
+    }
+
+    switch (state) {
+      case YT_PLAYER_STATE.PLAYING:
+        setPlaying(true)
+        break
+      case YT_PLAYER_STATE.PAUSED:
+        setPlaying(false)
+        break
+      case YT_PLAYER_STATE.ENDED:
+        setPlaying(false)
+        playNext()
+        break
+    }
+  }
+
+  const handlePlayerError = (error: any) => {
+    console.error('Player error:', error)
+    // 自動跳到下一首
+    setTimeout(() => {
+      playNext()
+    }, 2000)
+  }
+
+  // 本地儲存
+  const saveToLocalStorage = () => {
+    try {
+      const state = {
+        currentSong: currentSong.value,
+        volume: volume.value,
+        queue: queue.value,
+        repeatMode: repeatMode.value,
+        isShuffle: isShuffle.value,
+        timestamp: Date.now()
+      }
+      localStorage.setItem('player-preferences', JSON.stringify(state))
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error)
+    }
+  }
+
+  const loadFromLocalStorage = () => {
+    try {
+      const saved = localStorage.getItem('player-preferences')
+      if (!saved) return
+
+      const state = JSON.parse(saved)
+      
+      // 恢復偏好設定
+      if (state.volume !== undefined) {
+        volume.value = state.volume
+      }
+      if (state.repeatMode) {
+        repeatMode.value = state.repeatMode
+      }
+      if (state.isShuffle !== undefined) {
+        isShuffle.value = state.isShuffle
+      }
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error)
+    }
+  }
+
+  // 跨標籤頁通信
+  const setupCrossTabSync = () => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'player-state' && event.newValue) {
+        try {
+          const newState = JSON.parse(event.newValue)
+          
+          // 同步播放狀態（不包括當前歌曲，避免衝突）
+          if (newState.volume !== undefined && newState.volume !== volume.value) {
+            setVolume(newState.volume)
+          }
+          
+          if (newState.isPlaying !== undefined && newState.isPlaying !== isPlaying.value) {
+            setPlaying(newState.isPlaying)
+          }
+          
+        } catch (error) {
+          console.error('Failed to sync across tabs:', error)
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }
+
   return {
     // State
     currentSong,
@@ -403,6 +525,17 @@ export const usePlayerStore = defineStore('player', () => {
     reset,
     formatTime,
     togglePlayPause,
-    updateProgress
+    updateProgress,
+    
+    // 新增的同步方法
+    setCurrentSong,
+    setQueue,
+    setRepeatMode,
+    setShuffle,
+    handleStateChange,
+    handlePlayerError,
+    saveToLocalStorage,
+    loadFromLocalStorage,
+    setupCrossTabSync
   }
 })

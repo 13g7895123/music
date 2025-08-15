@@ -10,6 +10,7 @@
       "Bash(bash:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
+      "Bash(git commit -m:*)",
       "Bash(git push:*)",
       "Bash(docker-compose:*)",
       "Bash(node:*)",

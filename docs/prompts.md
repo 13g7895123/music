@@ -26,3 +26,5 @@
 16. 先幫我add commit push，再幫我從AAI/006開頭的檔案開始，往下執行，007、008，每執行完一個，都幫我add commit push，直到完成010
 17. 從AAI/011開頭的檔案開始，往下執行，011、012，每執行完一個，都幫我add commit push，直到完成全部。
 18. 從AAI/012開頭的檔案開始，依據往下執行，013、014，直到完成全部story，每執行完一個，都幫我add commit push。
+19. 從AAI/015開頭的檔案開始，依據往下執行，013、014..023，直到完成全部story，每執行完一個，都幫我add commit push。
+20. add commit push
