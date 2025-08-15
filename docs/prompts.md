@@ -37,3 +37,5 @@
    - Internal Server Error Preprocessor dependency "sass" not found. Did you install it? Try `npm install -D sass`.
 24. 修復以下問題
    - The requested module '/node_modules/.vite/deps/axios.js?v=62d2edcd' does not provide an export named 'AxiosInstance'
+25. 修復以下問題
+   - The requested module '/node_modules/.vite/deps/vue-router.js?v=a186076c' does not provide an export named 'NavigationGuardNext'

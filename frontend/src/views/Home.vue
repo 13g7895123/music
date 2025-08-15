@@ -95,7 +95,7 @@ const user = computed(() => authStore.user)
 }
 
 .btn {
-  @apply inline-block px-8 py-3 rounded-lg font-medium transition-all duration-200 text-decoration-none;
+  @apply inline-block px-8 py-3 rounded-lg font-medium transition-all duration-200 no-underline;
 }
 
 .btn-primary {
