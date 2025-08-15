@@ -25,9 +25,11 @@
       "Bash(curl:*)",
       "Bash(timeout 10 npm run dev)",
       "Bash(npx prisma migrate dev:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(timeout 15 npm run dev)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "defaultMode": "acceptEdits"
   }
 }

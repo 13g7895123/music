@@ -2,7 +2,13 @@
   <div class="dashboard">
     <header class="dashboard-header">
       <div class="header-content">
-        <h1>MyTune Dashboard</h1>
+        <div class="header-left">
+          <h1>MyTune</h1>
+          <nav class="header-nav">
+            <router-link to="/dashboard" class="nav-link">儀表板</router-link>
+            <router-link to="/playlists" class="nav-link">播放清單</router-link>
+          </nav>
+        </div>
         <div class="user-info">
           <span>歡迎回來，{{ user?.nickname }}！</span>
           <button @click="handleLogout" class="logout-btn">登出</button>
@@ -43,7 +49,7 @@
           <div class="feature-card">
             <h3>我的播放清單</h3>
             <p>管理您的個人音樂收藏</p>
-            <button class="feature-btn">開始使用</button>
+            <button @click="goToPlaylists" class="feature-btn">開始使用</button>
           </div>
           
           <div class="feature-card">
@@ -98,6 +104,10 @@ const handleLogout = async () => {
     router.push('/auth/login')
   }
 }
+
+const goToPlaylists = () => {
+  router.push('/playlists')
+}
 </script>
 
 <style scoped>
@@ -113,8 +123,24 @@ const handleLogout = async () => {
   @apply max-w-7xl mx-auto px-4 py-4 flex justify-between items-center;
 }
 
+.header-left {
+  @apply flex items-center space-x-6;
+}
+
 .dashboard-header h1 {
   @apply text-2xl font-bold text-gray-900;
+}
+
+.header-nav {
+  @apply flex space-x-4;
+}
+
+.nav-link {
+  @apply text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors;
+}
+
+.nav-link.router-link-active {
+  @apply text-blue-600 border-b-2 border-blue-600;
 }
 
 .user-info {

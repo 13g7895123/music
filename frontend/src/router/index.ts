@@ -28,6 +28,18 @@ const router = createRouter({
       component: () => import('../views/DashboardView.vue'),
       beforeEnter: authGuard
     },
+    {
+      path: '/playlists',
+      name: 'Playlists',
+      component: () => import('../views/PlaylistsView.vue'),
+      beforeEnter: authGuard
+    },
+    {
+      path: '/playlists/:id',
+      name: 'PlaylistDetail',
+      component: () => import('../views/PlaylistDetailView.vue'),
+      beforeEnter: authGuard
+    },
     // 默認重導向到首頁
     {
       path: '/:pathMatch(.*)*',
