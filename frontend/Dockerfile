@@ -1,11 +1,13 @@
 # Multi-stage build for frontend
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci --only=production --silent
+
+# Install all dependencies (including devDependencies for build)
+RUN npm ci --silent
 
 # Copy source code and build
 COPY . .

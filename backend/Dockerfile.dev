@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -6,10 +6,13 @@ WORKDIR /app
 RUN apk add --no-cache \
     python3 \
     make \
-    g++
+    g++ \
+    openssl \
+    openssl-dev
 
 # 複製package files
 COPY package*.json ./
+COPY prisma ./prisma/
 
 # 安裝依賴
 RUN npm install
@@ -17,8 +20,11 @@ RUN npm install
 # 複製源代碼
 COPY . .
 
+# 生成 Prisma 客戶端
+RUN npx prisma generate
+
 # 暴露端口
 EXPOSE 3000
 
 # 開發模式啟動
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "export OPENSSL_CONF=/etc/ssl && npx prisma db push --accept-data-loss && npm run dev"]
