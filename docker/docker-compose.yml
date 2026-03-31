@@ -12,9 +12,9 @@ services:
       frontend:
         condition: service_healthy
       backend:
-        condition: service_started
+        condition: service_healthy
       phpmyadmin:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app_network
     restart: unless-stopped
@@ -30,6 +30,12 @@ services:
       - app_network
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   # ─── Backend（CodeIgniter 4，透過 nginx /api 存取）────────
@@ -115,6 +121,12 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - app_network
     restart: unless-stopped
