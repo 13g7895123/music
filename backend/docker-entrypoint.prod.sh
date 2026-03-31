@@ -129,10 +129,6 @@ echo "Listening on: 0.0.0.0:9000 (FastCGI)"
 echo "Environment: ${CI_ENVIRONMENT:-production}"
 echo ""
 
-# 如果當前是 root 用戶，切換到 appuser 執行 php-fpm（提升安全性）
-if [ "$(id -u)" = "0" ]; then
-    echo "Switching to appuser for security..."
-    exec su-exec appuser php-fpm --nodaemonize
-else
-    exec php-fpm --nodaemonize
-fi
+# 以 root 啟動 php-fpm，由 fpm 內建機制 drop privilege 到 www-data
+# 不用 su-exec，避免切換用戶後 /proc/self/fd/2 (stderr) 權限問題
+exec php-fpm --nodaemonize
