@@ -111,7 +111,7 @@ services:
     environment:
       PMA_HOST: mariadb
       PMA_PORT: 3306
-      PMA_ABSOLUTE_URI: http://localhost:${APP_PORT:-80}/phpmyadmin/
+      PMA_ABSOLUTE_URI: http://localhost:${APP_PORT:-80}/pma/
     depends_on:
       mariadb:
         condition: service_healthy
