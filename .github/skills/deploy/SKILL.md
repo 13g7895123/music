@@ -116,7 +116,8 @@ docker/envs/.env.<env>
 | 2 | **密碼安全性** | 若 `DB_PASS` / `PGADMIN_PASSWORD` / `MYSQL_ROOT_PASSWORD` 仍為 example 預設值 → 自動替換為 8 碼隨機密碼 |
 | 3 | 複製 env | 若 `docker/.env` **不存在**才從來源複製；已存在則略過 |
 | 4 | 同步 backend/.env | 從 `docker/.env` 提取後端變數 |
-| 5 | docker compose | `cd docker && docker compose pull && up -d --build` |
+| 5 | **Port 衝突處理** | 檢查 `APP_PORT` / `DB_PORT_EXPOSED`：本專案容器 → 允許繼續；其他程序 → `kill -9` 強制終止後確認釋放（最多等 5 秒） |
+| 6 | docker compose | `cd docker && docker compose pull && up -d --build` |
 
 > **「存在則不複製」的用意**：伺服器上的 `docker/.env` 可能被手動調整，deploy 時不應覆蓋。如需強制重新套用：`rm docker/.env && ./scripts/deploy.sh production`
 
@@ -411,6 +412,16 @@ rm docker/.env
 症狀：phpMyAdmin 登入後頁面連結不含 `/phpmyadmin/` 前綴  
 → 確認 `PMA_ABSOLUTE_URI` 環境變數已設定並包含完整路徑（帶 trailing slash）  
 → 確認 nginx `location /phpmyadmin/` 區塊的 `proxy_pass http://phpmyadmin/;` 有 trailing slash
+
+### Port 被佔用（強制停止失敗）
+症狀：`❌  無法停止 PID xxx`
+→ 程序可能由 root 啟動，需以 `sudo ./scripts/deploy.sh production` 執行
+→ 或手動 `sudo kill -9 <PID>` 後再重跑
+
+### Port 遲遲未釋放
+症狀：`❌  Port xxx 仍未釋放，請手動處理`
+→ 程序可能正在 TIME_WAIT 狀態，稍等數秒後重試
+→ `ss -tlnp | grep :<PORT>` 確認目前佔用狀況
 
 ### docker compose 啟動失敗
 ```bash
