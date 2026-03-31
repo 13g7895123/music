@@ -1,52 +1,50 @@
-# Node modules
+# ─── Node modules ────────────────────────────────────────────
 node_modules/
+frontend/node_modules/
 npm-debug.log*
 
-# Development files
-src/
+# ─── PHP dependencies ────────────────────────────────────────
+backend/vendor/
+backend/writable/
+
+# ─── Build output（Dockerfile 會自行 build，不需預先複製）────
+frontend/dist/
+
+# ─── Environment files ───────────────────────────────────────
+.env
+.env.*
+docker/.env
+docker/envs/.env.development
+docker/envs/.env.production
+docker/envs/.env.staging
+
+# ─── Test / Spec ─────────────────────────────────────────────
 tests/
 specs/
-.specify/
+coverage/
 
-# Build artifacts (will be copied separately)
-# dist/
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Version control
-.git/
-.gitignore
-
-# Documentation
+# ─── Docs ────────────────────────────────────────────────────
 docs/
 *.md
 !README.md
 
-# CI/CD
+# ─── CI/CD ───────────────────────────────────────────────────
 .github/
-.gitlab-ci.yml
 
-# Test coverage
-coverage/
-
-# Logs
-logs/
-*.log
-
-# OS files
+# ─── IDE / OS ────────────────────────────────────────────────
+.vscode/
+.idea/
+.claude/
+.git/
+.gitignore
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
+*~
 
-# Temporary files
+# ─── Logs / Temp ─────────────────────────────────────────────
+logs/
+*.log
 tmp/
 temp/

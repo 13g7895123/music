@@ -19,7 +19,7 @@ services:
   frontend:
     build:
       context: ..
-      dockerfile: Dockerfile.prod
+      dockerfile: docker/Dockerfile.frontend
       args:
         VITE_API_URL: /api
     container_name: free_youtube_frontend
