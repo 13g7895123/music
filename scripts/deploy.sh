@@ -109,21 +109,48 @@ BACKEND_KEYS=(
 } > "${BACKEND_ENV}"
 ok "已同步 backend/.env"
 
-# ─── 5. Docker Compose 部署 ────────────────────────────────────
+# ─── 5. Port 衝突預檢查 ────────────────────────────────────────
+APP_PORT_VAL="$(grep -E '^APP_PORT=' "${ENV_DST}" | cut -d= -f2 | tr -d ' ' || echo 80)"
+# APP_PORT_EXPOSED 可能是 "127.0.0.1:3307" 或 "3307"，取最後數字部分
+DB_PORT_VAL="$(grep -E '^DB_PORT_EXPOSED=' "${ENV_DST}" | cut -d= -f2 | tr -d ' ' | sed 's/.*://' || echo 3307)"
+
+check_port() {
+    local PORT="$1"
+    local NAME="$2"
+    # 過濾掉已屬於本專案容器的 port（重新部署時允許）
+    if ss -tlnp 2>/dev/null | grep -q ":${PORT} " || \
+       netstat -tlnp 2>/dev/null | grep -q ":${PORT} "; then
+        # 檢查是否是自己的 container 在用
+        if docker ps --format '{{.Ports}}' 2>/dev/null | grep -q ":${PORT}->"; then
+            warn "${NAME} port ${PORT} 由現有容器佔用（將被重新部署）"
+        else
+            die "${NAME} port ${PORT} 已被其他程序佔用，請先釋放或修改 .env 中的設定"
+        fi
+    fi
+}
+
+check_port "${APP_PORT_VAL}" "APP_PORT"
+check_port "${DB_PORT_VAL}"  "DB_PORT_EXPOSED"
+
+# ─── 6. Docker Compose 部署 ────────────────────────────────────
 ok "開始建構並啟動容器..."
 cd "${DOCKER_DIR}"
 docker compose --env-file .env pull --ignore-pull-failures 2>/dev/null || true
-docker compose --env-file .env up -d --build --remove-orphans
+
+if ! docker compose --env-file .env up -d --build --remove-orphans; then
+    echo ""
+    die "docker compose up 失敗，請查看上方錯誤訊息。
+   常見原因：
+     • Port 已被佔用 → 修改 docker/envs/.env.${ENVIRONMENT} 中的 APP_PORT
+     • 映像檔建構失敗 → docker compose -f docker/docker-compose.yml build --no-cache
+     • 查看詳細 log：cd docker && docker compose logs"
+fi
 
 echo ""
 ok "部署完成！"
-
-APP_PORT_VAL="$(grep -E '^APP_PORT=' .env | cut -d= -f2 | tr -d ' ' || echo 80)"
-DB_PORT_VAL="$(grep -E '^DB_PORT_EXPOSED=' .env | cut -d= -f2 | tr -d ' ' | sed 's/.*://' || echo 3307)"
-
 echo ""
 echo "  主應用程式   http://localhost:${APP_PORT_VAL}/"
-echo "  phpMyAdmin  http://localhost:${APP_PORT_VAL}/phpmyadmin/"
+echo "  phpMyAdmin  http://localhost:${APP_PORT_VAL}/pma/"
 echo "  資料庫直連   localhost:${DB_PORT_VAL}  (MariaDB)"
 echo ""
 echo "  查看即時 log：cd docker && docker compose logs -f"
