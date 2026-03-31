@@ -1,15 +1,15 @@
 # ========================================
 # Stage 1: 構建前端
 # ========================================
-FROM node:22-alpine AS frontend-builder
+FROM oven/bun:1-alpine AS frontend-builder
 
 WORKDIR /app
 
 # 複製前端依賴文件
-COPY frontend/package*.json ./
+COPY frontend/package.json frontend/bun.lock* ./
 
-# 安裝依賴（包含 dev dependencies 用於構建）
-RUN npm ci --legacy-peer-deps
+# 安裝依賴
+RUN bun install --frozen-lockfile
 
 # 複製前端源碼
 COPY frontend/ .
@@ -21,7 +21,7 @@ ARG VITE_API_URL=/api
 ENV VITE_API_URL=${VITE_API_URL}
 
 # 構建前端靜態文件
-RUN npm run build
+RUN bun run build
 
 # ========================================
 # Stage 2: 生產環境 Nginx 服務器
