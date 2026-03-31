@@ -38,7 +38,9 @@ echo ""
 
 # ─── 2. 密碼安全性檢查（在來源檔上就地替換預設值）────────────
 gen_password() {
-    LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16
+    # 注意：tr 讀 /dev/urandom 被 head 關閉 pipe 後會收到 SIGPIPE(141)
+    # 加 || true 避免 set -o pipefail 導致腳本無聲靜默退出
+    LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16 || true
 }
 
 for i in "${!PASSWORD_KEYS[@]}"; do
