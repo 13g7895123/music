@@ -176,6 +176,25 @@ docker/envs/.env.<env>
 | `/phpmyadmin/` | `http://phpmyadmin/` | MySQL / MariaDB | 加 `PMA_ABSOLUTE_URI` 環境變數確保內部連結正確 |
 | `/` | `http://frontend` | — | Nuxt SSR（含 `/api/` 代理） |
 
+### upstream block 與 proxy_pass 的規則
+
+**重要**：nginx `upstream {}` block 已定義了 server 位址與 port，`proxy_pass` 引用 upstream 名稱時**不可再附加 port**，否則報錯 `upstream "xxx" may not have port`。
+
+```nginx
+# ✅ 正確
+upstream backend {
+    server backend:8000;
+}
+location /api {
+    proxy_pass http://backend;   # ← 只寫 upstream 名稱，不帶 port
+}
+
+# ❌ 錯誤（nginx 啟動失敗）
+location /api {
+    proxy_pass http://backend:8000;   # ← upstream 已定義 port，這裡不能再寫
+}
+```
+
 ### phpMyAdmin nginx location 範例
 
 ```nginx
@@ -293,6 +312,7 @@ phpmyadmin:
 - `frontend` 和 `backend` **不暴露** host port，只透過 nginx 存取
 - `pgadmin` **不暴露** host port，只透過 nginx `/pgadmin/` 存取
 - `phpmyadmin` **不暴露** host port，只透過 nginx `/phpmyadmin/` 存取
+- **禁用 `container_name`**：不在 service 上設定 `container_name`。固定名稱會導致同一台主機部署多個專案時命名衝突，且阻礙 `docker compose scale`。讓 Docker Compose 以 `<project>_<service>_<n>` 格式自動命名即可。
 
 ---
 
