@@ -116,23 +116,49 @@ APP_PORT_VAL="$(grep -E '^APP_PORT=' "${ENV_DST}" | cut -d= -f2 | tr -d ' ' || e
 # APP_PORT_EXPOSED 可能是 "127.0.0.1:3307" 或 "3307"，取最後數字部分
 DB_PORT_VAL="$(grep -E '^DB_PORT_EXPOSED=' "${ENV_DST}" | cut -d= -f2 | tr -d ' ' | sed 's/.*://' || echo 3307)"
 
-check_port() {
+kill_port() {
     local PORT="$1"
     local NAME="$2"
-    # 過濾掉已屬於本專案容器的 port（重新部署時允許）
-    if ss -tlnp 2>/dev/null | grep -q ":${PORT} " || \
-       netstat -tlnp 2>/dev/null | grep -q ":${PORT} "; then
-        # 檢查是否是自己的 container 在用
-        if docker ps --format '{{.Ports}}' 2>/dev/null | grep -q ":${PORT}->"; then
-            warn "${NAME} port ${PORT} 由現有容器佔用（將被重新部署）"
-        else
-            die "${NAME} port ${PORT} 已被其他程序佔用，請先釋放或修改 .env 中的設定"
-        fi
+
+    # 取得佔用此 port 的 PID（ss 優先，fallback netstat）
+    local PIDS
+    PIDS="$(ss -tlnp 2>/dev/null | grep ":${PORT} " | grep -oP 'pid=\K[0-9]+' || true)"
+    if [[ -z "${PIDS}" ]]; then
+        PIDS="$(netstat -tlnp 2>/dev/null | grep ":${PORT} " | awk '{print $7}' | cut -d/ -f1 | grep -E '^[0-9]+$' || true)"
     fi
+
+    if [[ -z "${PIDS}" ]]; then
+        return 0   # port 空閒，無需處理
+    fi
+
+    # 先檢查是否是本專案 docker container
+    if docker ps --format '{{.Ports}}' 2>/dev/null | grep -q ":${PORT}->"; then
+        warn "${NAME} port ${PORT} 由現有容器佔用，將重新部署"
+        return 0
+    fi
+
+    # 強制終止占用程序
+    warn "${NAME} port ${PORT} 被程序 PID=${PIDS} 佔用，強制停止中..."
+    for PID in ${PIDS}; do
+        if kill -9 "${PID}" 2>/dev/null; then
+            ok "  已強制停止 PID ${PID}"
+        else
+            die "無法停止 PID ${PID}，請以 root 權限執行或手動釋放 port ${PORT}"
+        fi
+    done
+
+    # 等待 port 釋放（最多 5 秒）
+    local WAIT=0
+    while ss -tlnp 2>/dev/null | grep -q ":${PORT} "; do
+        sleep 1
+        WAIT=$((WAIT + 1))
+        [[ ${WAIT} -ge 5 ]] && die "Port ${PORT} 仍未釋放，請手動處理"
+    done
+    ok "${NAME} port ${PORT} 已釋放"
 }
 
-check_port "${APP_PORT_VAL}" "APP_PORT"
-check_port "${DB_PORT_VAL}"  "DB_PORT_EXPOSED"
+kill_port "${APP_PORT_VAL}" "APP_PORT"
+kill_port "${DB_PORT_VAL}"  "DB_PORT_EXPOSED"
 
 # ─── 6. Docker Compose 部署 ────────────────────────────────────
 ok "開始建構並啟動容器..."
