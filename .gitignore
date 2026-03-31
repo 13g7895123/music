@@ -57,6 +57,10 @@ tests/coverage/
 
 # Docker
 .docker/
+docker/.env
+docker/envs/.env.development
+docker/envs/.env.production
+docker/envs/.env.staging
 
 # Misc
 TODO

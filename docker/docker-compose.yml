@@ -1,0 +1,128 @@
+services:
+  # ─── 入口 nginx 閘道 ──────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: free_youtube_nginx
+    ports:
+      - "${APP_PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+      - phpmyadmin
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # ─── Frontend（Vue.js SPA，透過 nginx 存取）───────────────
+  frontend:
+    build:
+      context: ..
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: /api
+    container_name: free_youtube_frontend
+    networks:
+      - app_network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ─── Backend（CodeIgniter 4，透過 nginx /api 存取）────────
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.prod
+    container_name: free_youtube_backend
+    environment:
+      CI_ENVIRONMENT: ${APP_ENV:-production}
+      AUTH_MODE: ${AUTH_MODE:-line}
+      MOCK_USER_ID: ${MOCK_USER_ID:-1}
+      # MariaDB
+      MYSQL_HOST: mariadb
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${DB_NAME:-free_youtube}
+      MYSQL_USER: ${DB_USER:-app_user}
+      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # CI4 database config
+      database.default.hostname: mariadb
+      database.default.database: ${DB_NAME:-free_youtube}
+      database.default.username: ${DB_USER:-app_user}
+      database.default.password: ${DB_PASS}
+      database.default.DBDriver: MySQLi
+      database.default.port: 3306
+      database.default.charset: utf8mb4
+      database.default.DBCollat: utf8mb4_unicode_ci
+      # LINE Login
+      LINE_LOGIN_CHANNEL_ID: ${LINE_LOGIN_CHANNEL_ID:-}
+      LINE_LOGIN_CHANNEL_SECRET: ${LINE_LOGIN_CHANNEL_SECRET:-}
+      LINE_LOGIN_CALLBACK_URL: ${LINE_LOGIN_CALLBACK_URL:-}
+      TOKEN_EXPIRE_SECONDS: ${TOKEN_EXPIRE_SECONDS:-2592000}
+      FRONTEND_URL: ${FRONTEND_URL:-}
+      # JWT
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ACCESS_TOKEN_EXPIRE: ${JWT_ACCESS_TOKEN_EXPIRE:-3600}
+      JWT_REFRESH_TOKEN_EXPIRE: ${JWT_REFRESH_TOKEN_EXPIRE:-2592000}
+      # Cookie
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      # CI4 App config
+      app.baseURL: ${APP_BASEURL:-http://localhost/}
+      app.forceGlobalSecureRequests: ${APP_FORCE_HTTPS:-false}
+      TZ: ${TZ:-Asia/Taipei}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - ../backend/writable:/var/www/html/writable
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # ─── MariaDB ──────────────────────────────────────────────
+  mariadb:
+    image: mariadb:10.6
+    container_name: free_youtube_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-free_youtube}
+      MYSQL_USER: ${DB_USER:-app_user}
+      MYSQL_PASSWORD: ${DB_PASS}
+      TZ: ${TZ:-Asia/Taipei}
+    ports:
+      - "${DB_PORT_EXPOSED:-3307}:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ../backend/database/migrations.sql:/docker-entrypoint-initdb.d/migrations.sql:ro
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ─── phpMyAdmin（透過 nginx /phpmyadmin/ 存取）────────────
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: free_youtube_phpmyadmin
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      PMA_ABSOLUTE_URI: http://localhost:${APP_PORT:-80}/phpmyadmin/
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
+volumes:
+  mariadb_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge

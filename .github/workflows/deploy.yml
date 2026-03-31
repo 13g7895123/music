@@ -1,0 +1,67 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy environment'
+        required: true
+        default: 'production'
+        type: choice
+        options: [production]
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 部署前先驗證 compose 設定（用正式環境範本）
+      - name: Validate compose config
+        run: |
+          cp docker/envs/.env.production.example docker/.env
+          docker compose -f docker/docker-compose.yml --env-file docker/.env config --quiet
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.DEPLOY_PORT }}" -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        run: |
+          ssh -p "${{ secrets.DEPLOY_PORT }}" \
+              -i ~/.ssh/id_ed25519 \
+              -o ServerAliveInterval=60 \
+              -o ServerAliveCountMax=3 \
+              "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"
+
+            echo "📥 Pulling latest changes..."
+            git fetch origin
+            git reset --hard origin/master
+
+            echo "🔧 Ensuring deploy script is executable..."
+            chmod +x scripts/deploy.sh
+
+            echo "🚀 Deploying..."
+            bash scripts/deploy.sh production
+
+            echo "✅ Deployment completed!"
+          EOF
+
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Production deployment successful!"
+          else
+            echo "❌ Production deployment failed!"
+            exit 1
+          fi
