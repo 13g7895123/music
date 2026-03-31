@@ -1,7 +1,7 @@
 # ========================================
 # 正式環境 Backend Dockerfile
 # ========================================
-FROM php:8.1-cli-alpine
+FROM php:8.1-fpm-alpine
 
 # 安裝系統依賴和 PHP 擴展
 RUN apk add --no-cache \
@@ -12,7 +12,12 @@ RUN apk add --no-cache \
     zip \
     unzip \
     icu-dev \
+    fcgi \
     && docker-php-ext-install pdo pdo_mysql mysqli intl opcache
+
+# 啟用 php-fpm ping/status 端點供 healthcheck 使用
+RUN echo "ping.path = /ping" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.status_path = /status" >> /usr/local/etc/php-fpm.d/www.conf
 
 # 配置 OPcache 以提升性能
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini && \
@@ -68,12 +73,12 @@ RUN apk add --no-cache su-exec
 # 這樣可以讓 entrypoint 以 root 執行 composer，然後再切換到 appuser 啟動應用
 # USER appuser
 
-# 暴露端口
-EXPOSE 8000
+# 暴露 php-fpm port
+EXPOSE 9000
 
-# 健康檢查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD php -r "file_get_contents('http://localhost:8000/health') or exit(1);"
+# 健康檢查：用 php-fpm 的 ping 端點
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+    CMD SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1
 
 # 使用啟動腳本
 ENTRYPOINT ["/docker-entrypoint.sh"]
