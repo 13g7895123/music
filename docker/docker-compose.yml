@@ -124,6 +124,7 @@ services:
       - "${PMA_PORT:-8081}:80"
     volumes:
       - ./phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
+      - ./phpmyadmin/custom.ini:/usr/local/etc/php/conf.d/custom.ini:ro
     environment:
       PMA_HOST: mariadb
       PMA_PORT: 3306
