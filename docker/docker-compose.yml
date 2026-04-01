@@ -122,6 +122,8 @@ services:
     image: phpmyadmin:latest
     ports:
       - "${PMA_PORT:-8081}:80"
+    volumes:
+      - ./phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
     environment:
       PMA_HOST: mariadb
       PMA_PORT: 3306
