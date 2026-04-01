@@ -49,8 +49,10 @@ project-root/
     ▼  APP_PORT（預設 80）
  nginx
     ├── /pgadmin/     →  pgadmin:5050      (PostgreSQL 用 pgAdmin 4)
-    ├── /phpmyadmin/  →  phpmyadmin:80     (MySQL/MariaDB 用 phpMyAdmin)
     └── /             →  frontend:3000     (Nuxt，/api/ 由 Nuxt server 內部代理到 backend:8080)
+
+NPM 子域名代理
+    pma.domain.com   →  127.0.0.1:PMA_PORT → phpmyadmin:80
 
 直接存取（DBA 工具）
     DB_PORT_EXPOSED  →  postgres:5432 / mysql:3306
@@ -62,7 +64,7 @@ project-root/
 | frontend (Nuxt) | 3000 | 只透過 nginx |
 | backend (Go) | 8080 | 只透過 Nuxt/nginx，不直接對外 |
 | pgadmin *(PostgreSQL)* | 5050 | 只透過 nginx `/pgadmin/` |
-| phpmyadmin *(MySQL)* | 80 | 只透過 nginx `/phpmyadmin/` |
+| phpmyadmin *(MySQL)* | 80 | `PMA_PORT`（綁 127.0.0.1，透過 NPM 子域名反向代理） |
 | postgres | 5432 | `DB_PORT_EXPOSED`（DBA 工具用） |
 | mysql / mariadb | 3306 | `DB_PORT_EXPOSED`（DBA 工具用） |
 
@@ -174,7 +176,7 @@ docker/envs/.env.<env>
 | location | proxy_pass | 適用DB | 說明 |
 |----------|------------|--------|------|
 | `/pgadmin/` | `http://pgadmin/` | PostgreSQL | 加 `X-Script-Name: /pgadmin` header，供 pgadmin 產生正確 URL |
-| `/phpmyadmin/` | `http://phpmyadmin/` | MySQL / MariaDB | 加 `PMA_ABSOLUTE_URI` 環境變數確保內部連結正確 |
+| *(已移除)* | — | MySQL / MariaDB | phpMyAdmin 改為獨立 port + NPM 子域名，不再經由 nginx subpath |
 | `/` | `http://frontend` | — | Nuxt SSR（含 `/api/` 代理） |
 
 ### upstream block 與 proxy_pass 的規則
@@ -196,18 +198,18 @@ location /api {
 }
 ```
 
-### phpMyAdmin nginx location 範例
+### phpMyAdmin 存取方式
 
-```nginx
-location /phpmyadmin/ {
-    proxy_pass         http://phpmyadmin/;
-    proxy_set_header   Host            $host;
-    proxy_set_header   X-Real-IP       $remote_addr;
-    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header   X-Forwarded-Proto $scheme;
-    proxy_redirect     off;
-}
+phpMyAdmin **不經由 nginx subpath**，改為獨立 port 綁定 `127.0.0.1`，透過 NPM（Nginx Proxy Manager）子域名反向代理存取：
+
 ```
+NPM Proxy Host:
+  Domain:  pma.your-domain.com
+  Forward: 127.0.0.1:PMA_PORT (預設 8081)
+  SSL:     啟用（Let's Encrypt）
+```
+
+> subpath 方式（`/pma/`）因 phpMyAdmin 靜態資源路徑問題，在多層反向代理下無法穩定運作，故改用子域名。
 
 ### SSE / WebSocket 設定
 
@@ -278,17 +280,19 @@ phpmyadmin:
   environment:
     PMA_HOST: mysql
     PMA_PORT: 3306
-    PMA_ABSOLUTE_URI: http://localhost:${APP_PORT:-80}/phpmyadmin/
+    PMA_ABSOLUTE_URI: ${PMA_ABSOLUTE_URI:-http://localhost:8081/}
+  ports:
+    - "127.0.0.1:${PMA_PORT:-8081}:80"
   depends_on:
     - mysql
   networks:
     - stock-net
 ```
 
-> `PMA_ABSOLUTE_URI` 必須帶 `/phpmyadmin/` trailing slash，否則內部頁面連結會跑掉。
+> `PMA_ABSOLUTE_URI` 必須對應 NPM 子域名（如 `https://pma.your-domain.com/`），確保內部連結正確。
 
 **登入**：
-- URL：`http://host:APP_PORT/phpmyadmin/`
+- URL：`https://pma.your-domain.com/`（透過 NPM 子域名）
 - Username：`DB_USER` 或 `root`
 - Password：`DB_PASS` 或 `MYSQL_ROOT_PASSWORD`
 
@@ -312,7 +316,7 @@ phpmyadmin:
 - 執行方式：`cd docker && docker compose ...`
 - `frontend` 和 `backend` **不暴露** host port，只透過 nginx 存取
 - `pgadmin` **不暴露** host port，只透過 nginx `/pgadmin/` 存取
-- `phpmyadmin` **不暴露** host port，只透過 nginx `/phpmyadmin/` 存取
+- `phpmyadmin` 綁定 `127.0.0.1:PMA_PORT`，透過 NPM 子域名反向代理存取（不經由 nginx subpath）
 - **禁用 `container_name`**：不在 service 上設定 `container_name`。固定名稱會導致同一台主機部署多個專案時命名衝突，且阻礙 `docker compose scale`。讓 Docker Compose 以 `<project>_<service>_<n>` 格式自動命名即可。
 
 ---
