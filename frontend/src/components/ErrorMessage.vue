@@ -181,6 +181,24 @@ function handleClose() {
   }
 }
 
+/* ===== V2 深色主題 ===== */
+[data-theme="v2"] .error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border-left-color: var(--color-error);
+}
+
+[data-theme="v2"] .error-icon {
+  color: var(--color-error-light);
+}
+
+[data-theme="v2"] .error-message-text {
+  color: var(--color-error-light);
+}
+
+[data-theme="v2"] .error-close {
+  color: var(--color-error-light);
+}
+
 /* 無障礙：減少動畫 */
 @media (prefers-reduced-motion: reduce) {
   .error-fade-enter-active,

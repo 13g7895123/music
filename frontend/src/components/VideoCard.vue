@@ -321,6 +321,36 @@ const handleDelete = () => {
   }
 }
 
+/* ===== V2 深色主題 (透過父層 data-theme 繼承) ===== */
+[data-theme="v2"] .video-card {
+  background: var(--v2-card-bg, #13131A);
+  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
+  box-shadow: none;
+}
+
+[data-theme="v2"] .video-card:hover {
+  background: var(--v2-card-hover-bg, #1C1C26);
+  border-color: var(--v2-card-hover-border, rgba(255,59,59,0.3));
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+}
+
+[data-theme="v2"] .thumbnail-placeholder {
+  background: linear-gradient(135deg, #1A1A24 0%, #0F0F18 100%);
+}
+
+[data-theme="v2"] .title {
+  color: var(--text-primary);
+}
+
+[data-theme="v2"] .channel {
+  color: var(--text-secondary);
+}
+
+[data-theme="v2"] .description {
+  color: var(--text-tertiary);
+}
+
 /* 無障礙：減少動畫 */
 @media (prefers-reduced-motion: reduce) {
   .video-card,

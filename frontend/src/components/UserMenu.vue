@@ -260,6 +260,29 @@ function handleAvatarError(event) {
   height: 20px;
 }
 
+/* ===== V2 深色主題 ===== */
+[data-theme="v2"] .user-info {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="v2"] .user-info:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="v2"] .user-name {
+  color: var(--text-primary);
+}
+
+[data-theme="v2"] .logout-button {
+  color: var(--text-secondary);
+}
+
+[data-theme="v2"] .logout-button:hover {
+  background: rgba(255, 59, 59, 0.15);
+  color: var(--color-brand-primary);
+}
+
 /* 響應式設計 */
 @media (max-width: 768px) {
   .user-name {

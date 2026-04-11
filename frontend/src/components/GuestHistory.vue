@@ -309,6 +309,55 @@ function handleImageError(event) {
   height: 20px;
 }
 
+/* ===== V2 深色主題 ===== */
+[data-theme="v2"] .guest-history {
+  background: var(--v2-card-bg, #13131A);
+  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
+  box-shadow: none;
+}
+
+[data-theme="v2"] .history-header {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="v2"] .history-title {
+  color: var(--text-primary);
+}
+
+[data-theme="v2"] .clear-button {
+  color: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+}
+
+[data-theme="v2"] .clear-button:hover {
+  background: var(--color-brand-primary);
+  color: white;
+}
+
+[data-theme="v2"] .history-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="v2"] .history-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 59, 59, 0.2);
+  transform: translateX(4px);
+}
+
+[data-theme="v2"] .video-title {
+  color: var(--text-primary);
+}
+
+[data-theme="v2"] .played-time {
+  color: var(--text-tertiary);
+}
+
+[data-theme="v2"] .remove-button:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-error-light);
+}
+
 /* 響應式設計 */
 @media (max-width: 768px) {
   .guest-history {

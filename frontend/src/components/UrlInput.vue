@@ -107,4 +107,26 @@ function handleSubmit() {
     width: 100%;
   }
 }
+
+/* ===== V2 深色主題 ===== */
+[data-theme="v2"] .url-input {
+  background: var(--v2-input-bg, #0F0F18);
+  border-color: var(--v2-input-border, rgba(255,255,255,0.1));
+  color: var(--text-primary);
+}
+
+[data-theme="v2"] .url-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+[data-theme="v2"] .url-input:focus {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 3px var(--v2-input-focus-glow, rgba(255,59,59,0.2));
+}
+
+[data-theme="v2"] .validation-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-left-color: var(--color-error);
+  color: var(--color-error-light);
+}
 </style>

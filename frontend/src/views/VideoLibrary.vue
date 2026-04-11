@@ -1,5 +1,5 @@
 <template>
-  <div class="video-library">
+  <div :class="['video-library', { 'video-library-v2': isV2 }]">
     <div class="header">
       <h1>
         <FilmIcon class="header-icon" />
@@ -139,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, inject } from 'vue'
 import { useVideoStore } from '@/stores/videoStore'
 import { usePlaylistStore } from '@/stores/playlistStore'
 import { useGlobalPlayerStore } from '@/stores/globalPlayerStore'
@@ -156,6 +156,7 @@ import {
   ChevronRightIcon
 } from '@heroicons/vue/24/outline'
 
+const { isV2 } = inject('theme', { isV2: ref(false) })
 const toast = useToast()
 
 const showConfirmModal = ref(false)
@@ -567,6 +568,71 @@ onMounted(() => {
 
 .btn-primary:hover {
   background: var(--color-brand-primary-dark);
+}
+
+/* ===== V2 深色主題 ===== */
+.video-library-v2 {
+  background: var(--bg-primary);
+  min-height: calc(100vh - 60px);
+}
+
+.video-library-v2 .header h1 {
+  color: var(--text-primary);
+}
+
+.video-library-v2 .search-input {
+  background: var(--v2-input-bg, #0F0F18);
+  border-color: var(--v2-input-border, rgba(255,255,255,0.1));
+  color: var(--text-primary);
+}
+
+.video-library-v2 .search-input:focus {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 3px var(--v2-input-focus-glow, rgba(255,59,59,0.2));
+}
+
+.video-library-v2 .search-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.video-library-v2 .modal {
+  background: var(--v2-card-bg, #13131A);
+  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
+}
+
+.video-library-v2 .modal-header {
+  border-bottom-color: var(--border-color);
+}
+
+.video-library-v2 .modal-header h2 {
+  color: var(--text-primary);
+}
+
+.video-library-v2 .modal-footer {
+  border-top-color: var(--border-color);
+}
+
+.video-library-v2 .playlist-item {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.video-library-v2 .playlist-item:hover {
+  background: var(--v2-card-hover-bg, #1C1C26);
+  border-color: var(--v2-card-hover-border, rgba(255,59,59,0.3));
+}
+
+.video-library-v2 .playlist-item span {
+  color: var(--text-primary);
+}
+
+.video-library-v2 .error {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error-light);
+}
+
+.video-library-v2 .empty {
+  color: var(--text-secondary);
 }
 
 /* Modal 動畫 */

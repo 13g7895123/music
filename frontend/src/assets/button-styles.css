@@ -334,6 +334,82 @@ input[type="radio"] {
 }
 
 /* ===================================
+   V2 深色主題 按鈕/輸入框覆蓋
+   ================================= */
+
+[data-theme="v2"] .btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="v2"] .btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="v2"] .btn-ghost {
+  color: var(--text-secondary);
+}
+
+[data-theme="v2"] .btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+[data-theme="v2"] .btn-outline-secondary {
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme="v2"] .btn-outline-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-color-hover);
+}
+
+/* V2 表單輸入深色主題 */
+[data-theme="v2"] input[type="text"],
+[data-theme="v2"] input[type="email"],
+[data-theme="v2"] input[type="password"],
+[data-theme="v2"] input[type="number"],
+[data-theme="v2"] input[type="url"],
+[data-theme="v2"] input[type="search"],
+[data-theme="v2"] input[type="tel"],
+[data-theme="v2"] textarea,
+[data-theme="v2"] select {
+  background-color: var(--v2-input-bg, #0F0F18);
+  border-color: var(--v2-input-border, rgba(255,255,255,0.1));
+  color: var(--text-primary);
+}
+
+[data-theme="v2"] input[type="text"]:hover,
+[data-theme="v2"] input[type="email"]:hover,
+[data-theme="v2"] textarea:hover,
+[data-theme="v2"] select:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="v2"] input[type="text"]:focus,
+[data-theme="v2"] input[type="email"]:focus,
+[data-theme="v2"] input[type="password"]:focus,
+[data-theme="v2"] input[type="url"]:focus,
+[data-theme="v2"] textarea:focus,
+[data-theme="v2"] select:focus {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 3px var(--v2-input-focus-glow, rgba(255,59,59,0.2));
+}
+
+[data-theme="v2"] input[type="text"]:disabled,
+[data-theme="v2"] textarea:disabled,
+[data-theme="v2"] select:disabled {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="v2"] .form-group label {
+  color: var(--text-secondary);
+}
+
+/* ===================================
    無障礙：減少動畫
    ================================= */
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="playlist-manager">
+  <div :class="['playlist-manager', { 'playlist-manager-v2': isV2 }]">
     <div class="header">
       <h1>
         <QueueListIcon class="header-icon" />
@@ -194,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlaylistStore } from '@/stores/playlistStore'
 import { useVideoStore } from '@/stores/videoStore'
@@ -213,6 +213,7 @@ import {
   PlayIcon
 } from '@heroicons/vue/24/outline'
 
+const { isV2 } = inject('theme', { isV2: ref(false) })
 const router = useRouter()
 const playlistStore = usePlaylistStore()
 const videoStore = useVideoStore()
@@ -827,6 +828,97 @@ onMounted(async () => {
   .playlist-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ===== V2 深色主題 ===== */
+.playlist-manager-v2 {
+  background: var(--bg-primary);
+  min-height: calc(100vh - 60px);
+}
+
+.playlist-manager-v2 .header h1 {
+  color: var(--text-primary);
+}
+
+.playlist-manager-v2 .playlist-card {
+  background: var(--v2-card-bg, #13131A);
+  border-color: var(--v2-card-border, rgba(255,255,255,0.06));
+  transition: all 200ms ease;
+}
+
+.playlist-manager-v2 .playlist-card:hover {
+  background: var(--v2-card-hover-bg, #1C1C26);
+  border-color: var(--v2-card-hover-border, rgba(255,59,59,0.3));
+  box-shadow: var(--shadow-md);
+}
+
+.playlist-manager-v2 .playlist-header h3 {
+  color: var(--text-primary);
+}
+
+.playlist-manager-v2 .description {
+  color: var(--text-secondary);
+}
+
+.playlist-manager-v2 .status.active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ADE80;
+}
+
+.playlist-manager-v2 .status.inactive {
+  background: rgba(239, 68, 68, 0.15);
+  color: #F87171;
+}
+
+.playlist-manager-v2 .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.playlist-manager-v2 .modal {
+  background: var(--v2-card-bg, #13131A);
+  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
+}
+
+.playlist-manager-v2 .modal-header {
+  border-bottom-color: var(--border-color);
+}
+
+.playlist-manager-v2 .modal-header h2 {
+  color: var(--text-primary);
+}
+
+.playlist-manager-v2 .form-group label {
+  color: var(--text-secondary);
+}
+
+.playlist-manager-v2 .form-group input[type="text"],
+.playlist-manager-v2 .form-group textarea {
+  background: var(--v2-input-bg, #0F0F18);
+  border-color: var(--v2-input-border, rgba(255,255,255,0.1));
+  color: var(--text-primary);
+}
+
+.playlist-manager-v2 .form-group input[type="text"]:focus,
+.playlist-manager-v2 .form-group textarea:focus {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 3px var(--v2-input-focus-glow, rgba(255,59,59,0.2));
+}
+
+.playlist-manager-v2 .modal-footer {
+  border-top-color: var(--border-color);
+}
+
+.playlist-manager-v2 .confirm-modal .modal-body p {
+  color: var(--text-secondary);
+}
+
+.playlist-manager-v2 .error {
+  color: var(--color-error-light);
+}
+
+.playlist-manager-v2 .empty {
+  color: var(--text-secondary);
 }
 
 /* 無障礙：減少動畫 */

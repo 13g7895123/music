@@ -1,5 +1,5 @@
 <template>
-  <div class="playlist-detail">
+  <div :class="['playlist-detail', { 'playlist-detail-v2': isV2 }]">
     <div v-if="!loading" class="detail-container">
       <!-- Header -->
       <div class="detail-header">
@@ -115,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePlaylistStore } from '@/stores/playlistStore'
 import { useVideoStore } from '@/stores/videoStore'
@@ -133,6 +133,7 @@ import {
   TrashIcon
 } from '@heroicons/vue/24/outline'
 
+const { isV2 } = inject('theme', { isV2: ref(false) })
 const route = useRoute()
 const playlistStore = usePlaylistStore()
 const videoStore = useVideoStore()
@@ -661,6 +662,72 @@ const formatDuration = (seconds) => {
     flex-direction: column;
     gap: var(--space-2);
   }
+}
+
+/* ===== V2 深色主題 ===== */
+.playlist-detail-v2 {
+  background: var(--bg-primary);
+}
+
+.playlist-detail-v2 .detail-header {
+  background: var(--v2-card-bg, #13131A);
+  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
+  box-shadow: none;
+}
+
+.playlist-detail-v2 .header-content h1 {
+  color: var(--text-primary);
+}
+
+.playlist-detail-v2 .description {
+  color: var(--text-secondary);
+}
+
+.playlist-detail-v2 .back-button {
+  color: var(--color-brand-primary);
+}
+
+.playlist-detail-v2 .back-button:hover {
+  background: rgba(255, 59, 59, 0.1);
+}
+
+.playlist-detail-v2 .player-section {
+  background: var(--v2-card-bg, #13131A);
+  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
+}
+
+.playlist-detail-v2 .videos-section {
+  background: var(--v2-card-bg, #13131A);
+  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
+  box-shadow: none;
+}
+
+.playlist-detail-v2 .videos-section h2 {
+  color: var(--text-primary);
+}
+
+.playlist-detail-v2 .video-item {
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.playlist-detail-v2 .video-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 59, 59, 0.2);
+}
+
+.playlist-detail-v2 .video-item.is-current {
+  background: rgba(255, 59, 59, 0.1);
+  border-color: rgba(255, 59, 59, 0.4);
+}
+
+.playlist-detail-v2 .video-number {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+.playlist-detail-v2 .video-info-detail h3 {
+  color: var(--text-primary);
 }
 
 /* 無障礙：減少動畫 */

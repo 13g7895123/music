@@ -1,10 +1,10 @@
 <template>
-  <div id="app" class="container">
-    <header class="app-header">
+  <div id="app" :class="['container', { 'container-v2': isV2 }]">
+    <header :class="['app-header', { 'app-header-v2': isV2 }]">
       <div class="header-content">
         <div class="header-text">
-          <h1 class="app-title">YouTube Loop Player</h1>
-          <p class="app-subtitle">貼上 YouTube 網址，自動循環播放</p>
+          <h1 :class="['app-title', { 'app-title-v2': isV2 }]">YouTube Loop Player</h1>
+          <p :class="['app-subtitle', { 'app-subtitle-v2': isV2 }]">貼上 YouTube 網址，自動循環播放</p>
         </div>
       </div>
     </header>
@@ -194,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, computed } from 'vue'
+import { ref, onMounted, watch, nextTick, computed, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import UrlInput from '../components/UrlInput.vue'
 import VideoPlayer from '../components/VideoPlayer.vue'
@@ -209,6 +209,9 @@ import { useLocalStorage } from '../composables/useLocalStorage'
 import { useGlobalPlayerStore } from '../stores/globalPlayerStore'
 import { useGuestHistory } from '../composables/useGuestHistory'
 import { useAuthStore } from '../stores/auth'
+
+// 主題
+const { isV2 } = inject('theme', { isV2: ref(false) })
 
 // 路由
 const route = useRoute()
@@ -900,6 +903,67 @@ onMounted(async () => {
   .welcome-text {
     font-size: 0.9375rem;
   }
+}
+
+/* ===== V2 深色主題覆蓋 ===== */
+.container-v2 {
+  background: var(--bg-primary);
+}
+
+.app-header-v2 {
+  padding: 2rem 1rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.app-title-v2 {
+  background: linear-gradient(135deg, #FF3B3B 0%, #FF6B6B 50%, #FF9999 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+.app-subtitle-v2 {
+  color: var(--text-secondary);
+}
+
+.container-v2 .auth-required-message {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #60A5FA;
+}
+
+.container-v2 .session-expired-message {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #FCD34D;
+}
+
+.container-v2 .welcome-message {
+  background: var(--v2-card-bg, #13131A);
+  border: 1px solid var(--v2-card-border, rgba(255, 255, 255, 0.06));
+  box-shadow: var(--shadow-lg);
+}
+
+.container-v2 .welcome-icon {
+  color: #FF3B3B;
+  filter: drop-shadow(0 0 12px rgba(255, 59, 59, 0.4));
+}
+
+.container-v2 .welcome-title {
+  color: var(--text-primary);
+}
+
+.container-v2 .welcome-text {
+  color: var(--text-secondary);
+}
+
+.container-v2 .app-footer {
+  border-top-color: var(--border-color);
+}
+
+.container-v2 .footer-text {
+  color: var(--text-tertiary);
 }
 
 /* DEBUG Panel Styles */
