@@ -1,195 +1,149 @@
 <template>
   <div id="app" :class="['container', { 'container-v2': isV2 }]">
-    <header :class="['app-header', { 'app-header-v2': isV2 }]">
-      <div class="header-content">
-        <div class="header-text">
-          <h1 :class="['app-title', { 'app-title-v2': isV2 }]">YouTube Loop Player</h1>
-          <p :class="['app-subtitle', { 'app-subtitle-v2': isV2 }]">貼上 YouTube 網址，自動循環播放</p>
+
+    <!-- ===== A: 音頻可視化粒子背景（全局 fixed） ===== -->
+    <AudioVisualizer :is-playing="player.isPlaying.value" />
+
+    <!-- ===== B: Hero 3D 場景（首頁未播放時） ===== -->
+    <Transition name="hero-fade">
+      <section
+        v-if="!hasVideo && !isLoading"
+        class="hero-section"
+        :class="{ 'hero-section--dark': isV2 }"
+      >
+        <HeroScene :visible="true" />
+        <div class="hero-content">
+          <h1 class="hero-title">
+            <span class="hero-title-line">YouTube</span>
+            <span class="hero-title-line hero-title-accent">Loop Player</span>
+          </h1>
+          <p class="hero-subtitle">貼上任意 YouTube 網址，無限循環播放</p>
+          <div class="hero-url-input">
+            <UrlInput
+              :is-loading="isLoading"
+              :validation-error="parser.errorMessage.value"
+              @submit="handleUrlSubmit"
+            />
+          </div>
+          <div class="hero-badges">
+            <span class="badge">影片</span>
+            <span class="badge">播放清單</span>
+            <span class="badge">自動循環</span>
+          </div>
         </div>
-      </div>
-    </header>
+      </section>
+    </Transition>
 
-    <main class="app-main">
-      <!-- 認證提示訊息 -->
-      <div v-if="showAuthRequiredMessage" class="auth-required-message">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          class="info-icon"
-        >
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-        </svg>
-        <p>此功能需要登入，請先使用 LINE 登入</p>
-      </div>
-
-      <!-- 會話過期提示訊息 -->
-      <div v-if="showSessionExpiredMessage" class="session-expired-message">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          class="warning-icon"
-        >
-          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
-        </svg>
-        <p>您的登入已過期，請重新登入以繼續使用會員功能</p>
-      </div>
-
-      <!-- URL 輸入 -->
-      <UrlInput
-        :is-loading="isLoading"
-        :validation-error="parser.errorMessage.value"
-        @submit="handleUrlSubmit"
-      />
-
-      <!-- 錯誤訊息 -->
-      <ErrorMessage
-        :message="player.errorMessage.value"
-        @close="clearError"
-      />
-
-      <!-- DEBUG 認證狀態顯示 (開發用) -->
-      <div v-if="debugMode" class="debug-panel">
-        <div class="debug-header">
-          <h3>🔍 認證流程 DEBUG 資訊</h3>
-          <button @click="debugMode = false" class="debug-close">✕</button>
-        </div>
-        <div class="debug-content">
-          <div class="debug-section">
-            <h4>認證狀態</h4>
-            <div class="debug-item">
-              <span class="debug-label">isAuthenticated:</span>
-              <span :class="['debug-value', authStore.isAuthenticated ? 'success' : 'error']">
-                {{ authStore.isAuthenticated }}
-              </span>
-            </div>
-            <div class="debug-item">
-              <span class="debug-label">當前用戶:</span>
-              <span class="debug-value">{{ authStore.user ? authStore.user.display_name : 'null' }}</span>
-            </div>
-            <div class="debug-item">
-              <span class="debug-label">用戶 ID:</span>
-              <span class="debug-value">{{ authStore.user ? authStore.user.id : 'null' }}</span>
+    <!-- ===== 播放中介面 ===== -->
+    <Transition name="player-slide">
+      <div v-if="hasVideo || isLoading" class="player-section">
+        <header :class="['app-header', { 'app-header-v2': isV2 }]">
+          <div class="header-content">
+            <div class="header-text">
+              <h1 :class="['app-title', { 'app-title-v2': isV2 }]">YouTube Loop Player</h1>
+              <p :class="['app-subtitle', { 'app-subtitle-v2': isV2 }]">貼上 YouTube 網址，自動循環播放</p>
             </div>
           </div>
+        </header>
 
-          <div class="debug-section">
-            <h4>Cookie 狀態</h4>
-            <div class="debug-item">
-              <span class="debug-label">Document.cookie:</span>
-              <span class="debug-value cookie">{{ cookieStatus }}</span>
-            </div>
-            <div class="debug-item">
-              <span class="debug-label">Has access_token:</span>
-              <span :class="['debug-value', hasAccessTokenCookie ? 'success' : 'error']">
-                {{ hasAccessTokenCookie }}
-              </span>
-            </div>
+        <main class="app-main">
+          <!-- 認證提示訊息 -->
+          <div v-if="showAuthRequiredMessage" class="auth-required-message">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="info-icon">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <p>此功能需要登入，請先使用 LINE 登入</p>
           </div>
 
-          <div class="debug-section">
-            <h4>API 配置</h4>
-            <div class="debug-item">
-              <span class="debug-label">API URL:</span>
-              <span class="debug-value">{{ apiUrl }}</span>
-            </div>
-            <div class="debug-item">
-              <span class="debug-label">withCredentials:</span>
-              <span class="debug-value success">true</span>
-            </div>
-            <div class="debug-item">
-              <span class="debug-label">Auth Mode:</span>
-              <span class="debug-value">{{ authMode }}</span>
-            </div>
+          <!-- 會話過期提示訊息 -->
+          <div v-if="showSessionExpiredMessage" class="session-expired-message">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="warning-icon">
+              <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+            <p>您的登入已過期，請重新登入以繼續使用會員功能</p>
           </div>
 
-          <div class="debug-section">
-            <h4>認證流程日誌</h4>
-            <div class="debug-log-container">
-              <div v-for="(log, index) in debugLogs" :key="index" class="debug-log">
-                <span class="debug-time">{{ log.time }}</span>
-                <span :class="['debug-type', log.type]">{{ log.type }}</span>
-                <span class="debug-message">{{ log.message }}</span>
-                <pre v-if="log.data" class="debug-data">{{ JSON.stringify(log.data, null, 2) }}</pre>
+          <!-- URL 輸入（播放中顯示） -->
+          <UrlInput
+            :is-loading="isLoading"
+            :validation-error="parser.errorMessage.value"
+            @submit="handleUrlSubmit"
+          />
+
+          <ErrorMessage :message="player.errorMessage.value" @close="clearError" />
+
+          <!-- DEBUG Panel -->
+          <div v-if="debugMode" class="debug-panel">
+            <div class="debug-header">
+              <h3>DEBUG</h3>
+              <button @click="debugMode = false" class="debug-close">✕</button>
+            </div>
+            <div class="debug-content">
+              <div class="debug-section">
+                <h4>認證狀態</h4>
+                <div class="debug-item">
+                  <span class="debug-label">isAuthenticated:</span>
+                  <span :class="['debug-value', authStore.isAuthenticated ? 'success' : 'error']">{{ authStore.isAuthenticated }}</span>
+                </div>
+              </div>
+              <div class="debug-section">
+                <h4>Cookie 狀態</h4>
+                <div class="debug-item">
+                  <span class="debug-label">Has access_token:</span>
+                  <span :class="['debug-value', hasAccessTokenCookie ? 'success' : 'error']">{{ hasAccessTokenCookie }}</span>
+                </div>
+              </div>
+              <div class="debug-section">
+                <h4>操作</h4>
+                <div class="debug-actions">
+                  <button @click="testCheckAuth" class="debug-btn">測試 checkAuth</button>
+                  <button @click="testApiCall" class="debug-btn">測試 API</button>
+                  <button @click="checkCookies" class="debug-btn">Cookies</button>
+                  <button @click="clearDebugLogs" class="debug-btn">清除</button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="debug-section">
-            <h4>操作</h4>
-            <div class="debug-actions">
-              <button @click="testCheckAuth" class="debug-btn">測試 checkAuth</button>
-              <button @click="testApiCall" class="debug-btn">測試 API Call</button>
-              <button @click="checkCookies" class="debug-btn">檢查 Cookies</button>
-              <button @click="clearDebugLogs" class="debug-btn">清除日誌</button>
-            </div>
-          </div>
-        </div>
+          <!-- 影片播放器 -->
+          <VideoPlayer
+            v-if="hasVideo"
+            :is-loading="isLoading"
+            :is-ready="player.isReady.value"
+            :is-playing="player.isPlaying.value"
+            :is-paused="player.isPaused.value"
+            :is-buffering="player.isBuffering.value"
+          />
+
+          <!-- 播放控制 -->
+          <PlayerControls
+            v-if="hasVideo && player.isReady.value"
+            :is-playing="player.isPlaying.value"
+            :is-paused="player.isPaused.value"
+            :volume="player.volume.value"
+            :is-muted="player.isMuted.value"
+            @play="player.play"
+            @pause="player.pause"
+            @volume-change="handleVolumeChange"
+            @mute-toggle="player.toggleMute"
+          />
+
+          <SaveVideoActions v-if="hasVideo && player.isReady.value" :get-video-info="getVideoInfo" />
+          <LoopToggle v-if="hasVideo" :is-enabled="player.loopEnabled.value" @toggle="handleLoopToggle" />
+          <GuestHistory @play-video="handlePlayFromHistory" />
+        </main>
+
+        <footer class="app-footer">
+          <p class="footer-text">支援 YouTube 影片和播放清單 · 自動循環播放 · 開源專案</p>
+        </footer>
       </div>
+    </Transition>
 
-      <!-- 影片播放器 -->
-      <VideoPlayer
-        v-if="hasVideo"
-        :is-loading="isLoading"
-        :is-ready="player.isReady.value"
-        :is-playing="player.isPlaying.value"
-        :is-paused="player.isPaused.value"
-        :is-buffering="player.isBuffering.value"
-      />
+    <!-- 首頁顯示的認證/session 提示（在 hero 外面） -->
+    <div v-if="!hasVideo && showAuthRequiredMessage" class="auth-required-message auth-float">
+      <p>此功能需要登入，請先使用 LINE 登入</p>
+    </div>
 
-      <!-- 播放控制 -->
-      <PlayerControls
-        v-if="hasVideo && player.isReady.value"
-        :is-playing="player.isPlaying.value"
-        :is-paused="player.isPaused.value"
-        :volume="player.volume.value"
-        :is-muted="player.isMuted.value"
-        @play="player.play"
-        @pause="player.pause"
-        @volume-change="handleVolumeChange"
-        @mute-toggle="player.toggleMute"
-      />
-
-      <!-- 儲存影片操作 -->
-      <SaveVideoActions
-        v-if="hasVideo && player.isReady.value"
-        :get-video-info="getVideoInfo"
-      />
-
-      <!-- 循環播放控制 -->
-      <LoopToggle
-        v-if="hasVideo"
-        :is-enabled="player.loopEnabled.value"
-        @toggle="handleLoopToggle"
-      />
-
-      <!-- 初始狀態提示 -->
-      <div v-if="!hasVideo && !isLoading" class="welcome-message">
-        <div class="welcome-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418 c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768 C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.861-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M10,15.464V8.536L16,12L10,15.464z"/>
-          </svg>
-        </div>
-        <h2 class="welcome-title">歡迎使用 YouTube Loop Player</h2>
-        <p class="welcome-text">
-          在上方輸入框貼上 YouTube 影片或播放清單網址，即可開始自動循環播放
-        </p>
-      </div>
-
-      <!-- 訪客播放歷史 -->
-      <GuestHistory @play-video="handlePlayFromHistory" />
-    </main>
-
-    <footer class="app-footer">
-      <p class="footer-text">
-        支援 YouTube 影片和播放清單 · 自動循環播放 · 開源專案
-      </p>
-    </footer>
   </div>
 </template>
 
@@ -203,6 +157,8 @@ import PlayerControls from '../components/PlayerControls.vue'
 import LoopToggle from '../components/LoopToggle.vue'
 import SaveVideoActions from '../components/SaveVideoActions.vue'
 import GuestHistory from '../components/GuestHistory.vue'
+import HeroScene from '../components/HeroScene.vue'
+import AudioVisualizer from '../components/AudioVisualizer.vue'
 import { useUrlParser } from '../composables/useUrlParser'
 import { useYouTubePlayer } from '../composables/useYouTubePlayer'
 import { useLocalStorage } from '../composables/useLocalStorage'
@@ -670,14 +626,169 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* ===== 頁面根容器 ===== */
 .container {
+  min-height: 100vh;
+}
+
+/* ===== Hero Section ===== */
+.hero-section {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(160deg, #0f0f1a 0%, #090912 60%, #0a0006 100%);
+  /* 補 navbar 高度，讓內容視覺置中 */
+  padding-top: 60px;
+}
+
+.hero-section--dark {
+  background: linear-gradient(160deg, #070710 0%, #05050d 60%, #060005 100%);
+}
+
+/* Hero 文字內容 */
+.hero-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  max-width: 680px;
+  width: 100%;
+}
+
+.hero-title {
+  margin: 0 0 1rem;
+  font-size: clamp(2.8rem, 8vw, 5.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1em;
+}
+
+.hero-title-line {
+  color: rgba(255, 255, 255, 0.92);
+  display: block;
+}
+
+.hero-title-accent {
+  background: linear-gradient(135deg, #FF3B3B 0%, #FF6B6B 40%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 30px rgba(255, 59, 59, 0.5));
+}
+
+.hero-subtitle {
+  margin: 0 0 2.5rem;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Hero URL 輸入框 */
+.hero-url-input {
+  margin-bottom: 1.5rem;
+  /* 讓輸入框在深色背景上有玻璃質感 */
+}
+
+.hero-url-input :deep(.url-input-container) {
+  max-width: 100%;
+}
+
+.hero-url-input :deep(.url-input) {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #F1F5F9 !important;
+  backdrop-filter: blur(12px);
+  font-size: 1rem;
+  height: 52px;
+  border-radius: 14px;
+}
+
+.hero-url-input :deep(.url-input::placeholder) {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.hero-url-input :deep(.url-input:focus) {
+  border-color: rgba(255, 59, 59, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(255, 59, 59, 0.15), 0 0 20px rgba(255, 59, 59, 0.1) !important;
+}
+
+.hero-url-input :deep(.btn-primary) {
+  background: linear-gradient(135deg, #FF3B3B, #cc1f1f) !important;
+  border: none !important;
+  height: 52px;
+  padding: 0 1.5rem;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(255, 59, 59, 0.4);
+  font-weight: 600;
+}
+
+.hero-url-input :deep(.btn-primary:hover:not(:disabled)) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 30px rgba(255, 59, 59, 0.5) !important;
+}
+
+/* 功能標籤 */
+.hero-badges {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.35rem 0.875rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(8px);
+}
+
+/* ===== Hero 過渡動畫 ===== */
+.hero-fade-enter-active {
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+.hero-fade-leave-active {
+  transition: opacity 400ms ease, transform 400ms ease;
+  position: absolute;
+  width: 100%;
+}
+.hero-fade-enter-from {
+  opacity: 0;
+  transform: scale(0.97);
+}
+.hero-fade-leave-to {
+  opacity: 0;
+  transform: scale(1.02);
+}
+
+/* ===== Player slide-in ===== */
+.player-slide-enter-active {
+  transition: opacity 400ms ease, transform 400ms cubic-bezier(0, 0, 0.2, 1);
+}
+.player-slide-enter-from {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+/* ===== 播放中版面 ===== */
+.player-section {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   max-width: 1200px;
   margin: 0 auto;
   padding: 1rem;
-  background: linear-gradient(to bottom, #ffffff, #f8f9fa);
 }
 
 /* Header */
@@ -722,6 +833,16 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+/* 浮動 auth 提示（在 hero 上） */
+.auth-float {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  max-width: 90vw;
 }
 
 /* 認證提示訊息 */

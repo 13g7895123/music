@@ -14,7 +14,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'youtube-api': ['./src/composables/useYouTubePlayer.js']
+          'youtube-api': ['./src/composables/useYouTubePlayer.js'],
+          'three-vendor': ['three']
         }
       }
     }

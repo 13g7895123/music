@@ -20,6 +20,7 @@
     "@heroicons/vue": "^2.2.0",
     "axios": "^1.13.0",
     "pinia": "^3.0.3",
+    "three": "^0.183.2",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
   },
@@ -33,6 +34,7 @@
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.56.1",
+    "@types/three": "^0.183.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vitest/coverage-v8": "^2.1.9",
     "@vitest/ui": "^2.1.9",
