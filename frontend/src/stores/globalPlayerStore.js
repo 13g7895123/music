@@ -11,6 +11,7 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
   const isVisible = ref(false)
   const loopMode = ref('playlist') // 'playlist' | 'single' | 'all'
   const shuffleEnabled = ref(false)
+  const shuffleHistory = ref([])
 
   // 音量控制狀態
   const volume = ref(parseInt(localStorage.getItem('playerVolume')) || 100)
@@ -28,11 +29,24 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
   const hasPlaylist = computed(() => currentPlaylist.value !== null && currentPlaylist.value.items?.length > 0)
   const isPlayerReady = computed(() => playerStatus.value.state === 'READY')
 
+  const resetShuffleHistory = () => {
+    shuffleHistory.value = []
+  }
+
+  const transitionToIndex = async (targetIndex) => {
+    isPlaying.value = false
+    currentIndex.value = targetIndex
+    currentVideo.value = currentPlaylist.value.items[targetIndex]
+    await nextTick()
+    isPlaying.value = true
+  }
+
   // Actions
   const playVideo = (videoInfo) => {
     currentVideo.value = videoInfo
     currentPlaylist.value = null
     currentIndex.value = 0
+    resetShuffleHistory()
     isPlaying.value = true
     isVisible.value = true
     isMinimized.value = false
@@ -45,6 +59,7 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
     currentPlaylist.value = playlist
     currentIndex.value = startIndex
     currentVideo.value = playlist.items[startIndex]
+    resetShuffleHistory()
     isPlaying.value = true
     isVisible.value = true
     isMinimized.value = false
@@ -81,6 +96,7 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
         return
       }
 
+      shuffleHistory.value.push(currentIndex.value)
       nextIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)]
     } else {
       // 順序播放
@@ -91,32 +107,25 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
       }
     }
 
-    // 先暫停，避免狀態不一致
-    isPlaying.value = false
-
-    // 更新當前影片
-    currentIndex.value = nextIndex
-    currentVideo.value = currentPlaylist.value.items[nextIndex]
-
-    // 使用 nextTick 確保 DOM 更新完成後再設置播放
-    await nextTick()
-    isPlaying.value = true
+    await transitionToIndex(nextIndex)
   }
 
-  const previous = () => {
+  const previous = async () => {
     if (!hasPlaylist.value) return
+
+    if (shuffleEnabled.value && shuffleHistory.value.length > 0) {
+      const previousShuffleIndex = shuffleHistory.value.pop()
+      await transitionToIndex(previousShuffleIndex)
+      return
+    }
 
     const prevIndex = currentIndex.value - 1
     if (prevIndex >= 0) {
-      currentIndex.value = prevIndex
-      currentVideo.value = currentPlaylist.value.items[prevIndex]
-      isPlaying.value = true
+      await transitionToIndex(prevIndex)
     } else {
       // Loop to last video
       const lastIndex = currentPlaylist.value.items.length - 1
-      currentIndex.value = lastIndex
-      currentVideo.value = currentPlaylist.value.items[lastIndex]
-      isPlaying.value = true
+      await transitionToIndex(lastIndex)
     }
   }
 
@@ -131,12 +140,14 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
   const close = () => {
     isVisible.value = false
     isPlaying.value = false
+    resetShuffleHistory()
   }
 
   const clear = () => {
     currentVideo.value = null
     currentPlaylist.value = null
     currentIndex.value = 0
+    resetShuffleHistory()
     isPlaying.value = false
     isVisible.value = false
     isMinimized.value = false
@@ -151,6 +162,7 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
   const toggleShuffle = () => {
     const oldValue = shuffleEnabled.value
     shuffleEnabled.value = !shuffleEnabled.value
+    resetShuffleHistory()
     console.log('toggleShuffle: changed from', oldValue, 'to', shuffleEnabled.value)
   }
 
