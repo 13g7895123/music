@@ -165,30 +165,45 @@ cp docker/envs/.env.development.example docker/envs/.env.development
 
 ## deploy.sh 運作原理
 
+腳本分為 `scripts/deploy.sh`（流程與旗標解析）與 `scripts/_common.sh`（共用函式），架構對齊 `07_coupang-analysis`。
+
 ```
 docker/envs/.env.<env>
         │
-        │  ① 密碼安全性檢查（若仍為預設值則自動替換）
-        │
-        │  ② 若 docker/.env 不存在才複製
+        │  ① prepare_env_file：每次部署強制複製（來源為單一真實來源）
         ▼
     docker/.env  ◄── docker compose 從此讀取（env_file + 變數插值）
         │
-        └── 提取後端變數 → backend/.env  ◄── CI4 PHP-FPM 使用
+        │  ② handle_weak_secrets：偵測弱密鑰，輪替時同步寫回上游 .env.<env>
+        │
+        └── ③ sync_backend_env → backend/.env  ◄── CI4 PHP-FPM 使用
 ```
 
 ### 步驟說明
 
 | 步驟 | 操作 | 說明 |
 |------|------|------|
-| 1 | 驗證來源 | 確認 `docker/envs/.env.<env>` 存在 |
-| 2 | **密碼安全性** | 若 `DB_PASS` / `JWT_SECRET_KEY` / `MYSQL_ROOT_PASSWORD` 仍為 `changeme` 預設值 → 自動替換為 16 碼隨機密碼 |
-| 3 | 複製 env | 若 `docker/.env` **不存在**才從來源複製；已存在則略過 |
-| 4 | 同步 backend/.env | 從 `docker/.env` 提取後端變數寫入 `backend/.env` |
-| 5 | **Port 衝突處理** | 檢查 `APP_PORT` / `DB_PORT_EXPOSED`：本專案容器 → 允許繼續；其他程序 → `kill -9` 強制終止後確認釋放（最多等 5 秒） |
-| 6 | docker compose | `cd docker && docker compose pull && up -d --build --remove-orphans` |
+| 1 | 解析旗標 | 見下方旗標表；非 TTY 且未指定模式 → 自動降為 `--fail-on-weak` |
+| 2 | 驗證環境 | `require_env`：環境名須在 `VALID_ENVS`（`development` / `production`） |
+| 3 | 套用 env | `prepare_env_file`：`docker/envs/.env.<env>` → `docker/.env`（**每次強制覆寫**）。來源不存在則報錯並提示 `cp` 指令 |
+| 4 | **密鑰偵測** | `handle_weak_secrets`：依模式中止／輪替／跳過 |
+| 5 | 同步 backend/.env | `sync_backend_env`（在輪替**之後**，確保帶入新密鑰） |
+| 6 | Port 預檢查 | `APP_PORT` / `DB_PORT_EXPOSED`：本專案容器 → 允許繼續；其他程序 → `kill -9` 後確認釋放（最多等 5 秒） |
+| 7 | docker compose | `pull` → `build` → `up -d --remove-orphans` |
 
-> **「存在則不複製」的用意**：伺服器上的 `docker/.env` 可能被手動調整，deploy 時不應覆蓋。如需強制重新套用：`rm docker/.env && ./scripts/deploy.sh production`
+> **改為「每次強制覆寫 docker/.env」**：舊版「存在則不複製」會讓 `.env.<env>` 的變更永遠不生效。現在 `docker/envs/.env.<env>` 是唯一真實來源，要改設定就改它。
+
+### 旗標
+
+| 旗標 | 說明 |
+|------|------|
+| `--auto-secrets` | 偵測到弱密鑰自動產生（無互動） |
+| `--skip-secrets` | 跳過密鑰偵測（production 需配合 `--i-know-what-im-doing`） |
+| `--fail-on-weak` | 偵測到弱密鑰直接 exit 1（CI gate 用） |
+| `--i-know-what-im-doing` | 允許在 production 使用 `--skip-secrets` |
+| `--skip-port-check` | 跳過 port 佔用預檢查 |
+
+> 同時傳入 `--auto-secrets` 與 `--fail-on-weak` 時**後者生效**（依序解析，後者覆寫）。deploy-manager 預設傳入兩者，故 CI 部署實際為 gate，不會自動輪替 production 密鑰。
 
 ---
 
@@ -196,22 +211,35 @@ docker/envs/.env.<env>
 
 ### 觸發條件
 
-`DB_PASS`、`MYSQL_ROOT_PASSWORD`、`JWT_SECRET_KEY` 的值為 `changeme` / `changeme_root` 時，自動觸發。
+不再是硬編碼的 3 個 key，而是**依變數名分類 + 弱值樣式比對**：
+
+| 分類 | 名稱樣式 | 產生內容 |
+|------|----------|----------|
+| `password` | `*_PASSWORD` / `*_PASS` / `*_PWD` | 24 字 url-safe |
+| `hex` | `*_SECRET` / `*_SIGNING_KEY` / `JWT_*` | 64 hex（256-bit） |
+| `token` | `*_TOKEN` / `*_API_KEY` | 48 字 base64url |
+| `base64` | `*_ENCRYPTION_KEY` / `*_AES_KEY` | 44 字 base64 |
+
+弱值樣式包含 `changeme`、`REPLACE_WITH_*`、`your_*_here`、`password`、`admin`、**空值**等。因此 `LINE_LOGIN_CHANNEL_SECRET=your_channel_secret_here` 這類舊版漏掉的值現在會被偵測到。
 
 ### 行為
 
-- 在 `docker/envs/.env.<env>` 中原地替換為 16 碼隨機密碼（`[A-Za-z0-9]`）
-- 若 `docker/.env` 已存在，也對其進行同樣檢查與替換
-- 終端輸出提示訊息，但**不顯示**新密碼（安全考量）
-- 替換後立即繼續部署，密碼永久儲存於檔案中
+- 同時寫入 `docker/.env` 與 `docker/envs/.env.<env>`，確保下次部署不會重複輪替
+- 寫入前備份為 `.bak`（含明文密鑰，已納入 `.gitignore`）
+- 終端只顯示新值**前 8 碼**（`secret_preview`）
 
-### 強制重新產生
+### ⚠️ 資料庫已初始化時勿輪替 DB 密碼
+
+MariaDB 只在初始化**空 volume** 時套用 `MYSQL_PASSWORD` / `MYSQL_ROOT_PASSWORD`。若 volume 已存在，輪替 `DB_PASS` / `MYSQL_ROOT_PASSWORD` 只會改到 `.env`，實際 DB 密碼不變 → 後端連線失敗。
+
+腳本以 `db_volume_exists` 偵測既有 volume 並警告。處理方式擇一：
 
 ```bash
-# 直接手動編輯，將值改回 changeme，再重新部署即可觸發
-nano docker/envs/.env.production
-rm docker/.env
-./scripts/deploy.sh production
+# (a) 手動在 DB 內更新密碼以對齊 .env
+docker compose exec mariadb mariadb -uroot -p -e \
+  "ALTER USER 'app_user'@'%' IDENTIFIED BY '<新密碼>'; FLUSH PRIVILEGES;"
+
+# (b) 保留原密碼：直接把強密碼寫進 .env.<env>，別讓腳本自動輪替
 ```
 
 ---
@@ -384,35 +412,44 @@ phpmyadmin:
 ## GitHub Actions — CD
 
 **檔案**：`.github/workflows/deploy.yml`  
-**觸發**：push 到 `master` / `main`，或手動 `workflow_dispatch`
+**觸發**：`CI` workflow 成功後自動觸發，或手動 `workflow_dispatch`
 
-流程：
-1. Checkout → 用 `.env.production.example` 建立 `docker/.env` → 驗證 compose config
-2. SSH 到伺服器：`git reset --hard origin/master`
-3. 確認 `docker/envs/.env.production` 存在（需手動在伺服器建立）
-4. 執行 `bash scripts/deploy.sh production`
+部署由 **deploy-manager** 統一管理，workflow 本身不含部署邏輯：
 
-### 必要的 GitHub Secrets
+```
+GitHub Actions ──SSH──▶ deploy-router.sh <project>
+                              │
+                              ├── git pull
+                              ├── 寫入 .env（若設定 ENV_PROD secret）
+                              └── scripts/deploy.sh production --auto-secrets --fail-on-weak
+                                    （參數來自 configs/music.json 的 deploy_args）
+```
 
-| Secret | 說明 |
-|--------|------|
-| `DEPLOY_HOST` | 伺服器 IP 或 hostname |
-| `DEPLOY_USER` | SSH 使用者名稱 |
-| `DEPLOY_SSH_KEY` | SSH 私鑰（PEM 格式） |
-| `DEPLOY_PORT` | SSH port（選用，預設 22） |
-| `DEPLOY_PATH` | 伺服器專案路徑（如 `/srv/free-youtube`） |
+### GitHub Variables / Secrets
+
+| 類型 | 名稱 | 必填 | 說明 |
+|------|------|:---:|------|
+| Variable | `PROJECT_NAME` | ✅ | 對應 `deploy-manager/configs/<name>.json`（建議 `music`） |
+| Variable | `DEPLOY_MANAGER_ROOT` | ❌ | 預設 `$HOME/deploy-manager` |
+| Variable | `PROJECTS_ROOT` | ❌ | 專案根目錄白名單，預設 `$HOME/project` |
+| Secret | `SSH_HOST` | ✅ | 部署主機 IP / Hostname |
+| Secret | `SSH_USER` | ✅ | SSH 帳號 |
+| Secret | `SSH_PRIVATE_KEY` | ✅ | SSH 私鑰 |
+| Secret | `SSH_PORT` | ❌ | 非 22 才填 |
+| Secret | `ENV_PROD` | ❌ | `.env.production` 完整內容；設定後由 deploy-manager 覆寫主機 `.env` |
+
+> 建議走 `ENV_PROD` secret 路線：`.env.production` 以 GitHub 為唯一真實來源，主機端不保留正式密鑰。
 
 ### 伺服器首次設定
 
 ```bash
-# 在伺服器上執行（只需一次）
-cd /srv/my-project
+cd <repo_path>
 cp docker/envs/.env.production.example docker/envs/.env.production
-nano docker/envs/.env.production   # 填入正式環境值（或留預設讓 deploy.sh 自動產生密碼）
-
-# 首次部署（會自動輪替預設密碼、建立 docker/.env、啟動所有服務）
+nano docker/envs/.env.production   # 填入強密鑰與真實 LINE 憑證
 ./scripts/deploy.sh production
 ```
+
+> CI 帶 `--fail-on-weak`，任何 `changeme` / `your_*_here` 殘留都會讓部署中止。正式密鑰必須人工設定，不可依賴自動輪替。
 
 ---
 
@@ -440,19 +477,27 @@ nano docker/envs/.env.production   # 填入正式環境值（或留預設讓 dep
 
 ### deploy.sh 找不到環境檔
 ```
-❌  找不到環境設定檔：…/docker/envs/.env.production
+❌ 找不到環境檔：…/docker/envs/.env.production
 ```
 → `cp docker/envs/.env.production.example docker/envs/.env.production` 並填值
 
-### 想強制重新套用 env
-```bash
-rm docker/.env
-./scripts/deploy.sh production
+### 部署因弱密鑰中止
 ```
+❌ 發現弱密鑰（--fail-on-weak / 非 TTY 環境）
+```
+→ 輸出會列出每個弱密鑰的名稱與現值，逐一改為強值後重試
+→ 本機要快速產生：`./scripts/deploy.sh <env> --auto-secrets`
+
+### 想強制重新套用 env
+→ 直接改 `docker/envs/.env.<env>` 後重跑即可，`docker/.env` 每次都會被覆寫（不需再 `rm`）
 
 ### backend/.env 未同步
 症狀：CI4 連不到 DB  
-→ 再次執行 `./scripts/deploy.sh production` 重新同步
+→ 再次執行 `./scripts/deploy.sh <env>` 重新同步
+
+### 輪替密碼後後端連不上 DB
+症狀：`Access denied for user`，但 `.env` 內密碼看起來是對的  
+→ MariaDB volume 已初始化，新密碼未套用。見上方「資料庫已初始化時勿輪替 DB 密碼」
 
 ### phpMyAdmin 無法開啟 / 內部連結錯誤
 症狀：phpMyAdmin 登入後頁面連結不含 `/pma/` 前綴  

@@ -1,185 +1,123 @@
 #!/usr/bin/env bash
-# =============================================================
-# YouTube Loop Player — 統一部署腳本
-# 用法：./scripts/deploy.sh [production|development]
-# =============================================================
+# ==========================================================
+# YouTube Loop Player - 部署腳本
+# 用法：./scripts/deploy.sh <env> [flags]
+#
+# 範例：
+#   ./scripts/deploy.sh development               互動模式（預設）
+#   ./scripts/deploy.sh production --auto-secrets 偵測到弱密鑰直接自動產生
+#   ./scripts/deploy.sh development --skip-secrets 跳過密鑰偵測（dev 快速重啟）
+#   ./scripts/deploy.sh production --fail-on-weak 偵測到弱密鑰直接 fail（CI gate）
+# ==========================================================
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
 
-# ─── 顏色輸出 ────────────────────────────────────────────────
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-ok()   { echo -e "${GREEN}✅  $*${NC}"; }
-warn() { echo -e "${YELLOW}⚠️   $*${NC}"; }
-die()  { echo -e "${RED}❌  $*${NC}"; exit 1; }
+SECRET_MODE="interactive"   # interactive | auto | skip | fail
+ALLOW_SKIP_IN_PROD=false    # --i-know-what-im-doing
+SKIP_PORT_CHECK=false
+ENV_ARG=""
 
-# ─── 環境參數 ────────────────────────────────────────────────
-ENVIRONMENT="${1:-production}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-DOCKER_DIR="${PROJECT_ROOT}/docker"
-ENV_SRC="${DOCKER_DIR}/envs/.env.${ENVIRONMENT}"
-ENV_DST="${DOCKER_DIR}/.env"
-BACKEND_ENV="${PROJECT_ROOT}/backend/.env"
+usage() {
+  cat <<EOF
+用法：$0 <env> [旗標]
 
-# ─── 密碼輪替 Keys（值為 .env.*.example 中的預設值）─────────
-PASSWORD_KEYS=(DB_PASS MYSQL_ROOT_PASSWORD JWT_SECRET_KEY)
-CHANGEME_DEFAULTS=(changeme changeme_root changeme)
+環境（必填）：
+  ${VALID_ENVS[*]}
 
-echo "================================================"
-echo "  YouTube Loop Player — Deploy [${ENVIRONMENT}]"
-echo "================================================"
-echo ""
-
-# ─── 1. 驗證環境設定檔存在 ───────────────────────────────────
-[[ -f "${ENV_SRC}" ]] || die "找不到環境設定檔：${ENV_SRC}
-   請先執行：cp docker/envs/.env.${ENVIRONMENT}.example ${ENV_SRC}"
-
-# ─── 2. 密碼安全性檢查（在來源檔上就地替換預設值）────────────
-gen_password() {
-    # 注意：tr 讀 /dev/urandom 被 head 關閉 pipe 後會收到 SIGPIPE(141)
-    # 加 || true 避免 set -o pipefail 導致腳本無聲靜默退出
-    LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16 || true
+旗標：
+  --auto-secrets         偵測到弱密鑰自動產生（無互動）
+  --skip-secrets         不執行密鑰偵測（production 需配合下一旗標）
+  --fail-on-weak         偵測到弱密鑰直接 exit 1（CI gate 用）
+  --i-know-what-im-doing 允許在 production 使用 --skip-secrets
+  --skip-port-check      跳過 port 佔用預檢查（不終止佔用程序）
+  -h, --help             顯示此說明
+EOF
 }
 
-for i in "${!PASSWORD_KEYS[@]}"; do
-    KEY="${PASSWORD_KEYS[$i]}"
-    DEFAULT="${CHANGEME_DEFAULTS[$i]}"
-
-    # 取得來源檔中的當前值
-    CURRENT_VAL="$(grep -E "^${KEY}=" "${ENV_SRC}" | cut -d= -f2- | tr -d '"' | tr -d "'" || true)"
-    if [[ "${CURRENT_VAL}" == "${DEFAULT}" ]]; then
-        NEW_PASS="$(gen_password)"
-        sed -i "s|^${KEY}=.*|${KEY}=${NEW_PASS}|" "${ENV_SRC}"
-        warn "${KEY} 為預設值，已自動替換（請查閱 ${ENV_SRC}）"
-    fi
-
-    # 若 docker/.env 已存在，也一併檢查並替換
-    if [[ -f "${ENV_DST}" ]]; then
-        CURRENT_DST="$(grep -E "^${KEY}=" "${ENV_DST}" | cut -d= -f2- | tr -d '"' | tr -d "'" || true)"
-        if [[ "${CURRENT_DST}" == "${DEFAULT}" ]]; then
-            NEW_PASS="$(gen_password)"
-            sed -i "s|^${KEY}=.*|${KEY}=${NEW_PASS}|" "${ENV_DST}"
-            warn "${KEY} 在 docker/.env 中為預設值，已自動替換"
-        fi
-    fi
+# 解析參數
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --auto-secrets)         SECRET_MODE="auto"; shift ;;
+    --skip-secrets)         SECRET_MODE="skip"; shift ;;
+    --fail-on-weak)         SECRET_MODE="fail"; shift ;;
+    --i-know-what-im-doing) ALLOW_SKIP_IN_PROD=true; shift ;;
+    --skip-port-check)      SKIP_PORT_CHECK=true; shift ;;
+    -h|--help)              usage; exit 0 ;;
+    -*)                     log_error "未知旗標：$1"; usage; exit 1 ;;
+    *)
+      if [[ -z "$ENV_ARG" ]]; then
+        ENV_ARG="$1"
+      else
+        log_error "多餘的位置參數：$1"; usage; exit 1
+      fi
+      shift
+      ;;
+  esac
 done
 
-# ─── 3. 複製 env（若不存在才複製）──────────────────────────────
-if [[ ! -f "${ENV_DST}" ]]; then
-    cp "${ENV_SRC}" "${ENV_DST}"
-    ok "已建立 docker/.env"
-else
-    warn "docker/.env 已存在，略過複製"
-    warn "如需強制重新套用：rm docker/.env && ./scripts/deploy.sh ${ENVIRONMENT}"
+ENV=$(require_env "$ENV_ARG")
+require_docker
+prepare_env_file "$ENV"
+
+# 非 TTY 且仍為 interactive → 自動降為 fail，避免 CI 卡住
+if [[ "$SECRET_MODE" == "interactive" && ! -t 0 ]]; then
+  log_warn "非 TTY 環境，自動切換密鑰模式為 --fail-on-weak"
+  SECRET_MODE="fail"
 fi
 
-# ─── 4. 同步 backend/.env ──────────────────────────────────────
-# 提取後端應用程式所需的環境變數，供本機開發或容器外執行使用
-BACKEND_KEYS=(
-    "APP_ENV" "AUTH_MODE" "MOCK_USER_ID"
-    "DB_NAME" "DB_USER" "DB_PASS"
-    "MYSQL_ROOT_PASSWORD"
-    "LINE_LOGIN_CHANNEL_ID" "LINE_LOGIN_CHANNEL_SECRET" "LINE_LOGIN_CALLBACK_URL"
-    "TOKEN_EXPIRE_SECONDS" "FRONTEND_URL"
-    "JWT_SECRET_KEY" "JWT_ACCESS_TOKEN_EXPIRE" "JWT_REFRESH_TOKEN_EXPIRE"
-    "COOKIE_DOMAIN" "APP_BASEURL" "APP_FORCE_HTTPS" "TZ"
-)
-{
-    echo "# Auto-generated by scripts/deploy.sh — do not edit manually"
-    echo "# Source: docker/.env  ($(date '+%Y-%m-%d %H:%M:%S'))"
-    echo ""
-    for VAR in "${BACKEND_KEYS[@]}"; do
-        LINE="$(grep -E "^${VAR}=" "${ENV_DST}" || true)"
-        [[ -n "${LINE}" ]] && echo "${LINE}"
-    done
-    # 補上 CI4 資料庫 dot-notation 格式
-    DB_PASS_VAL="$(grep -E "^DB_PASS=" "${ENV_DST}"  | cut -d= -f2- || true)"
-    DB_USER_VAL="$(grep -E "^DB_USER=" "${ENV_DST}"  | cut -d= -f2- || true)"
-    DB_NAME_VAL="$(grep -E "^DB_NAME=" "${ENV_DST}"  | cut -d= -f2- || true)"
-    echo ""
-    echo "# CI4 Database dot-notation (for local dev outside Docker)"
-    echo "database.default.hostname=127.0.0.1"
-    echo "database.default.database=${DB_NAME_VAL:-free_youtube}"
-    echo "database.default.username=${DB_USER_VAL:-app_user}"
-    echo "database.default.password=${DB_PASS_VAL}"
-    echo "database.default.DBDriver=MySQLi"
-    echo "database.default.port=3306"
-    echo "database.default.charset=utf8mb4"
-    echo "database.default.DBCollat=utf8mb4_unicode_ci"
-} > "${BACKEND_ENV}"
-ok "已同步 backend/.env"
-
-# ─── 5. Port 衝突預檢查 ────────────────────────────────────────
-APP_PORT_VAL="$(grep -E '^APP_PORT=' "${ENV_DST}" | cut -d= -f2 | tr -d ' ' || echo 80)"
-# APP_PORT_EXPOSED 可能是 "127.0.0.1:3307" 或 "3307"，取最後數字部分
-DB_PORT_VAL="$(grep -E '^DB_PORT_EXPOSED=' "${ENV_DST}" | cut -d= -f2 | tr -d ' ' | sed 's/.*://' || echo 3307)"
-
-kill_port() {
-    local PORT="$1"
-    local NAME="$2"
-
-    # 取得佔用此 port 的 PID（ss 優先，fallback netstat）
-    local PIDS
-    PIDS="$(ss -tlnp 2>/dev/null | grep ":${PORT} " | grep -oP 'pid=\K[0-9]+' || true)"
-    if [[ -z "${PIDS}" ]]; then
-        PIDS="$(netstat -tlnp 2>/dev/null | grep ":${PORT} " | awk '{print $7}' | cut -d/ -f1 | grep -E '^[0-9]+$' || true)"
-    fi
-
-    if [[ -z "${PIDS}" ]]; then
-        return 0   # port 空閒，無需處理
-    fi
-
-    # 先檢查是否是本專案 docker container
-    if docker ps --format '{{.Ports}}' 2>/dev/null | grep -q ":${PORT}->"; then
-        warn "${NAME} port ${PORT} 由現有容器佔用，將重新部署"
-        return 0
-    fi
-
-    # 強制終止占用程序
-    warn "${NAME} port ${PORT} 被程序 PID=${PIDS} 佔用，強制停止中..."
-    for PID in ${PIDS}; do
-        if kill -9 "${PID}" 2>/dev/null; then
-            ok "  已強制停止 PID ${PID}"
-        else
-            die "無法停止 PID ${PID}，請以 root 權限執行或手動釋放 port ${PORT}"
-        fi
-    done
-
-    # 等待 port 釋放（最多 5 秒）
-    local WAIT=0
-    while ss -tlnp 2>/dev/null | grep -q ":${PORT} "; do
-        sleep 1
-        WAIT=$((WAIT + 1))
-        [[ ${WAIT} -ge 5 ]] && die "Port ${PORT} 仍未釋放，請手動處理"
-    done
-    ok "${NAME} port ${PORT} 已釋放"
-}
-
-kill_port "${APP_PORT_VAL}" "APP_PORT"
-kill_port "${DB_PORT_VAL}"  "DB_PORT_EXPOSED"
-
-# ─── 6. Docker Compose 部署 ────────────────────────────────────
-ok "開始建構並啟動容器..."
-cd "${DOCKER_DIR}"
-docker compose --env-file .env pull --ignore-pull-failures 2>/dev/null || true
-
-if ! docker compose --env-file .env up -d --build --remove-orphans; then
-    echo ""
-    die "docker compose up 失敗，請查看上方錯誤訊息。
-   常見原因：
-     • Port 已被佔用 → 修改 docker/envs/.env.${ENVIRONMENT} 中的 APP_PORT
-     • 映像檔建構失敗 → docker compose -f docker/docker-compose.yml build --no-cache
-     • 查看詳細 log：cd docker && docker compose logs"
+# production 額外保護
+if [[ "$ENV" == "production" && "$SECRET_MODE" == "skip" && "$ALLOW_SKIP_IN_PROD" != "true" ]]; then
+  log_error "production 環境禁止 --skip-secrets，除非加上 --i-know-what-im-doing"
+  exit 1
 fi
 
+# 密鑰偵測（執行於 prepare_env_file 後、build/up 前）
+log_info "正在檢查弱密鑰..."
+if ! handle_weak_secrets "$SECRET_MODE"; then
+  exit 1
+fi
+
+# 密鑰可能已輪替，於此之後才同步 backend/.env
+sync_backend_env
+
+log_info "正在部署 $ENV 環境..."
+
+log_info "Step 1/4：Port 衝突預檢查"
+if [[ "$SKIP_PORT_CHECK" == "true" ]]; then
+  log_warn "已跳過 port 預檢查（--skip-port-check）"
+elif ! check_ports; then
+  log_error "Port 預檢查失敗"
+  exit 1
+fi
+
+log_info "Step 2/4：拉取最新 base images"
+compose pull --ignore-pull-failures 2>/dev/null || compose pull || true
+
+log_info "Step 3/4：建置應用 image"
+compose build
+
+log_info "Step 4/4：啟動服務"
+if ! compose up -d --remove-orphans; then
+  log_error "docker compose up 失敗，請查看上方錯誤訊息。"
+  echo "    常見原因：" >&2
+  echo "      • Port 已被佔用 → 修改 docker/envs/.env.$ENV 中的 APP_PORT" >&2
+  echo "      • 映像檔建構失敗 → cd docker && docker compose build --no-cache" >&2
+  echo "      • 查看詳細 log：cd docker && docker compose logs" >&2
+  exit 1
+fi
+
+log_ok "$ENV 部署完成"
+
+APP_PORT_VAL="$(env_value APP_PORT | tr -d ' ')"
+DB_PORT_VAL="$(env_value DB_PORT_EXPOSED | tr -d ' ' | sed 's/.*://')"
+
 echo ""
-ok "部署完成！"
-echo ""
-echo "  主應用程式   http://localhost:${APP_PORT_VAL}/"
-echo "  phpMyAdmin  http://localhost:${APP_PORT_VAL}/pma/"
-echo "  資料庫直連   localhost:${DB_PORT_VAL}  (MariaDB)"
+echo "  主應用程式   http://localhost:${APP_PORT_VAL:-80}/"
+echo "  phpMyAdmin  http://localhost:${APP_PORT_VAL:-80}/pma/"
+echo "  資料庫直連   localhost:${DB_PORT_VAL:-3307}  (MariaDB)"
 echo ""
 echo "  查看即時 log：cd docker && docker compose logs -f"
 echo ""
+
+log_info "目前容器狀態："
+compose ps

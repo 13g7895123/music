@@ -61,6 +61,12 @@ docker/.env
 docker/envs/.env.development
 docker/envs/.env.production
 docker/envs/.env.staging
+# deploy.sh 密鑰輪替時產生的備份／暫存檔（含明文密鑰）
+*.env.bak
+docker/.env.bak
+docker/envs/.env.*.bak
+docker/.env.tmp
+docker/envs/.env.*.tmp
 
 # Misc
 TODO
