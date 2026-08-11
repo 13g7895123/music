@@ -165,7 +165,7 @@ function animate() {
   renderer.render(scene, camera)
 }
 
-function updateParticles(t) {
+function updateParticles(_t) {
   const geo = particlesMesh.geometry
   const pos = geo.attributes.position.array
   const vel = particlesMesh.userData.velocities

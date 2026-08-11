@@ -148,7 +148,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, computed, inject } from 'vue'
+import { ref, onMounted, watch, nextTick, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import UrlInput from '../components/UrlInput.vue'
 import VideoPlayer from '../components/VideoPlayer.vue'
@@ -186,7 +186,6 @@ const debugLogs = ref([])
 const cookieStatus = ref('')
 const hasAccessTokenCookie = ref(false)
 const apiUrl = import.meta.env.VITE_API_URL || '/api'
-const authMode = import.meta.env.VITE_AUTH_MODE || 'line'
 
 // 從 LocalStorage 載入用戶偏好設定
 const settingsStorage = useLocalStorage('youtube-loop-player-settings', {
@@ -202,7 +201,8 @@ const player = useYouTubePlayer('youtube-player', {
   volume: settingsStorage.value?.volume ?? 100,
   isMuted: settingsStorage.value?.isMuted ?? false
 })
-const globalPlayerStore = useGlobalPlayerStore()
+// 僅為初始化 store，回傳值目前未使用
+useGlobalPlayerStore()
 const guestHistory = useGuestHistory()
 const authStore = useAuthStore()
 

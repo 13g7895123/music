@@ -3,7 +3,7 @@
  * 提供響應式的 URL 解析功能
  */
 import { ref } from 'vue'
-import { isValidYouTubeUrl, extractVideoId, extractPlaylistId } from '@/utils/urlValidator'
+import { isValidYouTubeUrl, extractVideoId } from '@/utils/urlValidator'
 import { ERROR_MESSAGES } from '@/utils/errorMessages'
 
 /**
