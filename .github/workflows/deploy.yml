@@ -1,67 +1,77 @@
+# Production 部署
+#
+# 由 deploy-manager 統一管理。
+# Pipeline 只負責 SSH 進主機呼叫 deploy-router.sh；實際部署邏輯走
+# scripts/deploy.sh（由 deploy-manager 透過 config 內 deploy_args 帶入參數）。
+#
+# 需要在 GitHub Repo 設定：
+#
+# Variables:
+#   PROJECT_NAME         對應 deploy-manager/configs/<PROJECT_NAME>.json（建議：music）
+#   DEPLOY_MANAGER_ROOT  Deploy Manager 安裝路徑（選填，預設 $HOME/deploy-manager）
+#   PROJECTS_ROOT        被部署專案的根目錄白名單（選填，預設 $HOME/project）
+#                        若專案不在預設位置，請設定此 Variable。
+#
+# Secrets:
+#   SSH_HOST             部署主機 IP / Hostname
+#   SSH_PORT             SSH Port（選填，預設 22）
+#   SSH_USER             SSH 帳號
+#   SSH_PRIVATE_KEY      SSH 私鑰
+#   ENV_PROD             docker/envs/.env.production 完整內容（選填）
+#                        - 設定：deploy-manager 會以此覆寫主機上的 .env
+#                        - 未設定：保留主機現有 .env
+
 name: Deploy
 
 on:
-  push:
-    branches: [master, main]
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - master
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deploy environment'
-        required: true
-        default: 'production'
-        type: choice
-        options: [production]
+
+concurrency:
+  group: deploy-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy to Production
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success'
+      )
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      # 部署前先驗證 compose 設定（用正式環境範本）
-      - name: Validate compose config
+      - name: Validate inputs
         run: |
-          cp docker/envs/.env.production.example docker/.env
-          docker compose -f docker/docker-compose.yml --env-file docker/.env config --quiet
-
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "${{ secrets.DEPLOY_PORT }}" -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Deploy via SSH
-        run: |
-          ssh -p "${{ secrets.DEPLOY_PORT }}" \
-              -i ~/.ssh/id_ed25519 \
-              -o ServerAliveInterval=60 \
-              -o ServerAliveCountMax=3 \
-              "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
-            set -e
-            cd "${{ secrets.DEPLOY_PATH }}"
-
-            echo "📥 Pulling latest changes..."
-            git fetch origin
-            git reset --hard origin/master
-
-            echo "🔧 Ensuring deploy script is executable..."
-            chmod +x scripts/deploy.sh
-
-            echo "🚀 Deploying..."
-            bash scripts/deploy.sh production
-
-            echo "✅ Deployment completed!"
-          EOF
-
-      - name: Report status
-        if: always()
-        run: |
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ Production deployment successful!"
-          else
-            echo "❌ Production deployment failed!"
+          if [ -z "${{ vars.PROJECT_NAME }}" ]; then
+            echo "::error::PROJECT_NAME variable is not set"
             exit 1
           fi
+
+      - name: Deploy via Deploy Manager
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: ENV_PROD,DEPLOY_MANAGER_ROOT,PROJECT_NAME,PROJECTS_ROOT
+          script_stop: true
+          script: |
+            export ENV_PROD="${ENV_PROD}"
+            export PROJECTS_ROOT="${PROJECTS_ROOT:-$HOME/project}"
+            DM_ROOT="${DEPLOY_MANAGER_ROOT:-$HOME/deploy-manager}"
+            export DEPLOY_MANAGER_ROOT="${DM_ROOT}"
+            "${DM_ROOT}/scripts/deploy-router.sh" "${PROJECT_NAME}"
+        env:
+          ENV_PROD: ${{ secrets.ENV_PROD }}
+          DEPLOY_MANAGER_ROOT: ${{ vars.DEPLOY_MANAGER_ROOT }}
+          PROJECT_NAME: ${{ vars.PROJECT_NAME }}
+          PROJECTS_ROOT: ${{ vars.PROJECTS_ROOT }}

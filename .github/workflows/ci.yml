@@ -1,0 +1,87 @@
+# PR / Push 守門：跑 backend 檢查與 frontend build，確保 master 永遠可部署。
+#
+# 不接觸 production。完全不需 secrets。
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (CodeIgniter 4)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: intl, mbstring, json, mysqli, curl
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache composer packages
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: composer validate
+        run: composer validate --strict --no-check-publish
+
+      - name: composer install
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      # xargs 回傳 123 代表至少有一個 php -l 失敗；用 -s pipefail 確保 job 會紅
+      - name: PHP lint
+        shell: bash
+        run: |
+          set -o pipefail
+          find app database public -name '*.php' -print0 \
+            | xargs -0 -n1 -P4 php -l > /dev/null
+
+  frontend:
+    name: Frontend (Vue + Vite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.2
+
+      - name: bun install
+        run: bun install --frozen-lockfile
+
+      - name: bun run lint
+        run: bun run lint
+
+      - name: bun run build
+        run: bun run build
+
+  compose:
+    name: Docker Compose config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 用正式環境範本驗證 compose 設定可解析，避免部署當下才爆掉
+      - name: Validate compose config
+        run: |
+          cp docker/envs/.env.production.example docker/.env
+          docker compose -f docker/docker-compose.yml --env-file docker/.env config --quiet
