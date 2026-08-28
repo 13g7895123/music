@@ -1,6 +1,7 @@
 -- Create videos table
 CREATE TABLE IF NOT EXISTS `videos` (
     `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id` INT(11) UNSIGNED NULL COMMENT '影片擁有者 ID',
     `video_id` VARCHAR(50) NOT NULL UNIQUE COMMENT 'YouTube 影片 ID',
     `title` VARCHAR(255) NOT NULL COMMENT '影片標題',
     `description` TEXT NULL COMMENT '影片描述',
@@ -16,7 +17,8 @@ CREATE TABLE IF NOT EXISTS `videos` (
     PRIMARY KEY (`id`),
     KEY `idx_video_id` (`video_id`),
     KEY `idx_channel_id` (`channel_id`),
-    KEY `idx_created_at` (`created_at`)
+    KEY `idx_created_at` (`created_at`),
+    KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create users table

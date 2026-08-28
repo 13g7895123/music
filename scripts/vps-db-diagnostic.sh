@@ -184,6 +184,9 @@ else
     echo -e "${RED}❌ MariaDB 容器啟動失敗${NC}"
 fi
 
+# 先偵測 backend 容器名稱，供本步驟的 migration 狀態檢查使用
+BACKEND_CONTAINER=$(docker ps --filter "name=backend" --format "{{.Names}}" | head -1)
+
 # ============== 測試 DB 連線 ==============
 echo -e "${YELLOW}[9] 測試 DB 連線${NC}"
 echo ""
@@ -220,6 +223,19 @@ if [ -n "$MARIADB_CONTAINER" ]; then
             echo ""
             echo "表計數:"
             docker exec "$MARIADB_CONTAINER" mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SELECT COUNT(*) as 'Table Count' FROM information_schema.tables WHERE table_schema='$DB_NAME';" 2>&1
+            echo ""
+
+            # 檢查 CodeIgniter migrations 是否有落後（migrations.sql 只做初始化，
+            # App/Database/Migrations 底下的增量 migration 不會自動執行）
+            echo "檢查 CodeIgniter migration 狀態:"
+            if [ -n "$BACKEND_CONTAINER" ]; then
+                docker exec "$BACKEND_CONTAINER" php spark migrate:status 2>&1 || echo "無法取得 migration 狀態"
+                echo ""
+                echo -e "${YELLOW}若上方顯示有未執行 (Pending) 的 migration，執行以下指令修復:${NC}"
+                echo "  docker exec $BACKEND_CONTAINER php spark migrate"
+            else
+                echo -e "${RED}⚠ Backend 容器未運行，無法檢查${NC}"
+            fi
         else
             echo -e "${RED}❌ 資料庫不存在${NC}"
         fi
