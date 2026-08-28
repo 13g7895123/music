@@ -67,6 +67,7 @@ echo -e "${YELLOW}[5] 尋找 16_music 專案目錄${NC}"
 echo ""
 
 PROJECT_DIRS=(
+    "/home/jarvis/01_project/01_idea/07_music"
     "/var/www/music"
     "/var/www/html/music"
     "/opt/music"
