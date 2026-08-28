@@ -63,31 +63,33 @@ else
 fi
 
 # ============== 尋找專案目錄 ==============
-echo -e "${YELLOW}[5] 尋找 16_music 專案目錄${NC}"
+echo -e "${YELLOW}[5] 尋找 music 專案目錄${NC}"
 echo ""
 
-PROJECT_DIRS=(
-    "/home/jarvis/01_project/01_idea/07_music"
-    "/var/www/music"
-    "/var/www/html/music"
-    "/opt/music"
-    "/home/*/project/*/16_music"
-    "$(pwd)/music"
-)
+# 允許手動指定，優先使用
+PROJECT_DIR="${PROJECT_DIR:-}"
 
-PROJECT_DIR=""
-for dir in "${PROJECT_DIRS[@]}"; do
-    if [ -d "$dir" ] && [ -f "$dir/docker-compose.yml" ] 2>/dev/null; then
-        PROJECT_DIR="$dir"
-        break
-    fi
-done
+# 動態搜尋：找含有 docker/docker-compose.yml 且內容有 mariadb + free_youtube 服務特徵的專案
+# 搜尋範圍：常見專案存放位置，避免全機掃描太慢
+if [ -z "$PROJECT_DIR" ]; then
+    SEARCH_ROOTS=("/home" "/var/www" "/opt" "/srv")
+
+    for root in "${SEARCH_ROOTS[@]}"; do
+        [ -d "$root" ] || continue
+        while IFS= read -r compose_file; do
+            candidate="$(dirname "$(dirname "$compose_file")")"
+            if grep -q "free_youtube\|mariadb" "$compose_file" 2>/dev/null; then
+                PROJECT_DIR="$candidate"
+                break 2
+            fi
+        done < <(find "$root" -maxdepth 6 -path "*/docker/docker-compose.yml" 2>/dev/null)
+    done
+fi
 
 if [ -z "$PROJECT_DIR" ]; then
-    echo -e "${RED}❌ 找不到 16_music 專案${NC}"
-    echo "請手動設定 PROJECT_DIR:"
-    echo 'export PROJECT_DIR="/path/to/16_music"'
-    echo "然後重新執行此腳本"
+    echo -e "${RED}❌ 找不到 music 專案${NC}"
+    echo "請手動指定 PROJECT_DIR 後重新執行:"
+    echo '  PROJECT_DIR="/path/to/project" bash scripts/vps-db-diagnostic.sh'
     exit 1
 else
     echo -e "${GREEN}✓ 找到專案目錄: $PROJECT_DIR${NC}"
