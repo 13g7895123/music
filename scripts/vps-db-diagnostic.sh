@@ -54,11 +54,19 @@ fi
 echo -e "${YELLOW}[4] 檢查 Docker Compose${NC}"
 echo ""
 
-if ! command -v docker-compose &> /dev/null; then
+# 相容 v1 獨立指令 (docker-compose) 與 v2 plugin (docker compose)
+DC=""
+if command -v docker-compose &> /dev/null; then
+    DC="docker-compose"
+elif docker compose version &> /dev/null; then
+    DC="docker compose"
+fi
+
+if [ -z "$DC" ]; then
     echo -e "${RED}❌ Docker Compose 未安裝${NC}"
 else
-    echo -e "${GREEN}✓ Docker Compose 已安裝${NC}"
-    echo "版本: $(docker-compose --version)"
+    echo -e "${GREEN}✓ Docker Compose 已安裝 (使用: $DC)${NC}"
+    echo "版本: $($DC version 2>&1 | head -1)"
     echo ""
 fi
 
@@ -125,7 +133,11 @@ cd "$PROJECT_DIR/docker"
 
 if [ -f "docker-compose.yml" ]; then
     echo "容器列表:"
-    docker-compose ps
+    if [ -n "$DC" ]; then
+        $DC ps
+    else
+        echo -e "${RED}⚠ 無可用的 compose 指令，略過${NC}"
+    fi
     echo ""
 else
     echo -e "${RED}❌ docker-compose.yml 不存在${NC}"
@@ -140,10 +152,14 @@ MARIADB_CONTAINER=$(docker ps --filter "name=mariadb" --format "{{.Names}}" | he
 if [ -z "$MARIADB_CONTAINER" ]; then
     echo -e "${RED}❌ MariaDB 容器未運行${NC}"
     echo ""
-    echo "嘗試啟動..."
-    docker-compose up -d mariadb
-    sleep 5
-    MARIADB_CONTAINER=$(docker ps --filter "name=mariadb" --format "{{.Names}}" | head -1)
+    if [ -n "$DC" ]; then
+        echo "嘗試啟動..."
+        $DC up -d mariadb
+        sleep 5
+        MARIADB_CONTAINER=$(docker ps --filter "name=mariadb" --format "{{.Names}}" | head -1)
+    else
+        echo -e "${RED}⚠ 無可用的 compose 指令，無法自動啟動${NC}"
+    fi
 fi
 
 if [ -n "$MARIADB_CONTAINER" ]; then
@@ -248,8 +264,8 @@ echo -e "${BLUE}  診斷完成 - $(date '+%Y-%m-%d %H:%M:%S')${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 echo "建議檢查項目:"
-echo "1. 確認所有容器都在運行: docker-compose ps"
-echo "2. 檢查容器 log: docker-compose logs -f <service-name>"
+echo "1. 確認所有容器都在運行: ${DC:-docker compose} ps"
+echo "2. 檢查容器 log: ${DC:-docker compose} logs -f <service-name>"
 echo "3. 測試 API: curl http://localhost:8080/api/health"
 echo "4. 檢查應用程式錯誤: docker exec <backend-container> tail -f writable/logs/log-*.log"
 echo ""
