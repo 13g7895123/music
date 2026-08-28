@@ -123,6 +123,18 @@ else
     echo "DB 相關設定:"
     grep -E "^DB_|^MYSQL_" "$ENV_FILE" 2>/dev/null | sed 's/=.*/=***/' || echo "無 DB 相關設定"
     echo ""
+
+    # 讀取實際生效的 DB 認證（deploy.sh 會把 changeme 換成隨機密碼寫回此檔）
+    # 允許外部環境變數優先覆蓋（export DB_USER=... 等），否則從檔案取值
+    ENV_DB_NAME=$(grep -E "^DB_NAME=" "$ENV_FILE" | tail -1 | cut -d= -f2-)
+    ENV_DB_USER=$(grep -E "^DB_USER=" "$ENV_FILE" | tail -1 | cut -d= -f2-)
+    ENV_DB_PASS=$(grep -E "^DB_PASS=" "$ENV_FILE" | tail -1 | cut -d= -f2-)
+    ENV_MYSQL_ROOT_PASSWORD=$(grep -E "^MYSQL_ROOT_PASSWORD=" "$ENV_FILE" | tail -1 | cut -d= -f2-)
+
+    DB_NAME="${DB_NAME:-$ENV_DB_NAME}"
+    DB_USER="${DB_USER:-$ENV_DB_USER}"
+    DB_PASS="${DB_PASS:-$ENV_DB_PASS}"
+    MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-$ENV_MYSQL_ROOT_PASSWORD}"
 fi
 
 # ============== 檢查 Docker Compose 狀態 ==============
@@ -177,12 +189,14 @@ echo -e "${YELLOW}[9] 測試 DB 連線${NC}"
 echo ""
 
 if [ -n "$MARIADB_CONTAINER" ]; then
-    # 從 .env 或 docker-compose 讀取 DB 認證
-    DB_USER=${DB_USER:-root}
-    DB_PASS=${DB_PASS:-secret}
-    DB_NAME=${DB_NAME:-free_youtube}
+    if [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; then
+        echo -e "${RED}⚠ 未能從 $ENV_FILE 讀到 DB_USER/DB_PASS，改用 root 帳號測試${NC}"
+        DB_USER="root"
+        DB_PASS="$MYSQL_ROOT_PASSWORD"
+    fi
+    DB_NAME="${DB_NAME:-free_youtube}"
 
-    echo "嘗試連接 MariaDB..."
+    echo "使用帳號 '$DB_USER' 連接 MariaDB..."
     TEST_RESULT=$(docker exec "$MARIADB_CONTAINER" mysqladmin ping -u"$DB_USER" -p"$DB_PASS" 2>&1 || echo "FAILED")
 
     if [[ "$TEST_RESULT" == *"mysqld is alive"* ]]; then
