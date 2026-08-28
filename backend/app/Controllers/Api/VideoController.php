@@ -32,8 +32,8 @@ class VideoController extends ResourceController
                 return $this->fail('未登入', 401);
             }
 
-            $page = $this->request->getVar('page') ?? 1;
-            $perPage = $this->request->getVar('per_page') ?? 20;
+            $page = (int)($this->request->getVar('page') ?? 1);
+            $perPage = (int)($this->request->getVar('per_page') ?? 20);
 
             // 計算該使用者的影片總數
             $total = $this->model->where('user_id', $userId)->countAllResults(false);
