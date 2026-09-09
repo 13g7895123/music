@@ -22,7 +22,7 @@
       </div>
     </div>
 
-    <LoadingSpinner v-if="loading" size="large" message="載入播放清單中..." />
+    <PlaylistCardSkeleton v-if="isLoading" :count="6" message="載入播放清單中..." />
 
     <div v-else-if="error" class="error">
       <p>{{ error }}</p>
@@ -200,7 +200,7 @@ import { usePlaylistStore } from '@/stores/playlistStore'
 import { useVideoStore } from '@/stores/videoStore'
 import { useGlobalPlayerStore } from '@/stores/globalPlayerStore'
 import { useToast } from '@/composables/useToast'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import PlaylistCardSkeleton from '@/components/PlaylistCardSkeleton.vue'
 import ExportImportButtons from '@/components/ExportImportButtons.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import {
@@ -230,6 +230,10 @@ const formData = ref({ name: '', description: '', is_active: true })
 
 const playlists = computed(() => playlistStore.playlists)
 const loading = computed(() => playlistStore.loading)
+// onMounted 會依序載入播放清單與影片庫；兩者都完成前都算載入中，
+// 否則 playlists 先回來就會先渲染，接著「所有影片」卡片才插進來造成跳動
+const initialLoading = ref(true)
+const isLoading = computed(() => initialLoading.value || loading.value)
 const error = computed(() => playlistStore.error)
 const currentPage = computed(() => playlistStore.currentPage)
 const totalPages = computed(() => playlistStore.totalPages)
@@ -405,10 +409,17 @@ const cancelImport = () => {
 }
 
 onMounted(async () => {
-  await fetchPlaylists()
-  // 載入所有影片數據以顯示「所有影片」播放清單
-  if (!videoStore.allVideos || videoStore.allVideos.length === 0) {
-    await videoStore.fetchAllVideos()
+  try {
+    // 兩者並行，避免序列等待；全部 settle 後才顯示內容
+    await Promise.all([
+      fetchPlaylists(),
+      videoStore.allVideos && videoStore.allVideos.length > 0
+        ? Promise.resolve()
+        : videoStore.fetchAllVideos()
+    ])
+  } finally {
+    // 即使影片庫載入失敗也要解除，讓畫面能顯示播放清單或錯誤訊息
+    initialLoading.value = false
   }
 })
 </script>
