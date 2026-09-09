@@ -117,18 +117,17 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # ─── phpMyAdmin（獨立 port，透過 NPM 子域名存取）─────────
+  # ─── phpMyAdmin（經由 nginx /pma/ 存取，不對外開 port）────
   phpmyadmin:
     image: phpmyadmin:latest
-    ports:
-      - "${PMA_PORT:-8081}:80"
+    # 不對外開 port，一律經由 nginx /pma/ 進入（內部網路互通即可）
     volumes:
       - ./phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
       - ./phpmyadmin/custom.ini:/usr/local/etc/php/conf.d/custom.ini:ro
     environment:
       PMA_HOST: mariadb
       PMA_PORT: 3306
-      PMA_ABSOLUTE_URI: ${PMA_ABSOLUTE_URI:-http://localhost:8081/}
+      PMA_ABSOLUTE_URI: ${PMA_ABSOLUTE_URI:-http://localhost/pma/}
     depends_on:
       mariadb:
         condition: service_healthy
