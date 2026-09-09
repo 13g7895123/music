@@ -236,6 +236,31 @@ if [ -n "$MARIADB_CONTAINER" ]; then
             else
                 echo -e "${RED}⚠ Backend 容器未運行，無法檢查${NC}"
             fi
+            echo ""
+
+            # 檢查 videos 表資料是否「有資料但畫面顯示空」的常見肇因：
+            # user_id 欄位是後補的，既有資料的 user_id 可能全部是 NULL，
+            # 導致 WHERE user_id = ? 查不到任何列
+            VIDEOS_TABLE_EXISTS=$(docker exec "$MARIADB_CONTAINER" mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SHOW TABLES LIKE 'videos';" 2>&1 | grep -c "videos" || echo "0")
+            if [ "$VIDEOS_TABLE_EXISTS" -gt 0 ]; then
+                VIDEOS_USER_ID_EXISTS=$(docker exec "$MARIADB_CONTAINER" mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SHOW COLUMNS FROM videos LIKE 'user_id';" 2>&1 | grep -c "user_id" || echo "0")
+                if [ "$VIDEOS_USER_ID_EXISTS" -gt 0 ]; then
+                    echo "檢查 videos 表 user_id 欄位資料狀況（畫面空但 DB 有資料時常見肇因）:"
+                    docker exec "$MARIADB_CONTAINER" mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "
+                        SELECT
+                            COUNT(*) AS total_rows,
+                            SUM(CASE WHEN user_id IS NULL THEN 1 ELSE 0 END) AS null_user_id,
+                            SUM(CASE WHEN user_id IS NOT NULL THEN 1 ELSE 0 END) AS has_user_id
+                        FROM videos;
+                    " 2>&1
+                    echo ""
+                    echo -e "${YELLOW}若 null_user_id > 0，代表這些資料沒有 owner，前端依 user_id 過濾時會查不到。${NC}"
+                    echo -e "${YELLOW}需視業務邏輯決定是否要回填 user_id（例如指派給特定使用者）。${NC}"
+                else
+                    echo -e "${RED}⚠ videos 表尚無 user_id 欄位，請先執行 php spark migrate${NC}"
+                fi
+                echo ""
+            fi
         else
             echo -e "${RED}❌ 資料庫不存在${NC}"
         fi
