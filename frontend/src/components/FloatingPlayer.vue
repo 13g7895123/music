@@ -479,10 +479,12 @@ const initPlayer = async (videoId) => {
     videoId,
     playerVars: {
       autoplay: playerStore.isPlaying ? 1 : 0,
-      controls: 0,
+      controls: 1,
       modestbranding: 1,
       rel: 0,
-      playsinline: 1
+      playsinline: 1,
+      // 某些網域下沒帶 origin 會被 YouTube 擋掉
+      origin: window.location.origin
     },
     events: {
       onReady: (event) => {
@@ -800,6 +802,14 @@ onUnmounted(() => {
 .pl-player.expanded .pl-stage {
   width: 100%;
   aspect-ratio: 16 / 9;
+}
+
+/* 舊瀏覽器不支援 aspect-ratio 時，高度會變成 0、影片整個看不見 */
+@supports not (aspect-ratio: 16 / 9) {
+  .pl-player.expanded .pl-stage {
+    height: 0;
+    padding-bottom: 56.25%;
+  }
 }
 
 .pl-stage-inner {
