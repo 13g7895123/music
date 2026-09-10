@@ -11,7 +11,14 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
   const isVisible = ref(false)
   const loopMode = ref('playlist') // 'playlist' | 'single' | 'all'
   const shuffleEnabled = ref(false)
-  const shuffleHistory = ref([])
+
+  // 播放導覽歷史
+  // playHistory：實際播過、位於目前這首之前的索引（最近的在最後）
+  // playForward：按「上一首」退回時，被留在前方待重播的索引（下一個要回去的在最後）
+  // shuffleBag：本輪隨機尚未播到的索引，播完一輪才會重新洗牌，避免同一首一直重複
+  const playHistory = ref([])
+  const playForward = ref([])
+  const shuffleBag = ref([])
 
   // 音量控制狀態
   const volume = ref(parseInt(localStorage.getItem('playerVolume')) || 100)
@@ -29,8 +36,35 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
   const hasPlaylist = computed(() => currentPlaylist.value !== null && currentPlaylist.value.items?.length > 0)
   const isPlayerReady = computed(() => playerStatus.value.state === 'READY')
 
-  const resetShuffleHistory = () => {
-    shuffleHistory.value = []
+  const playlistLength = computed(() => currentPlaylist.value?.items?.length ?? 0)
+
+  // 隨機模式下還有沒有「上一首」可以退回；順序模式永遠可以退
+  const canGoPrevious = computed(() => {
+    if (!hasPlaylist.value) return false
+    if (!shuffleEnabled.value) return true
+    return playHistory.value.length > 0
+  })
+
+  const resetNavigationHistory = () => {
+    playHistory.value = []
+    playForward.value = []
+    shuffleBag.value = []
+  }
+
+  /**
+   * 重新洗一輪隨機順序（Fisher-Yates），排除目前正在播的那首。
+   * 一輪之內每首只會播到一次，播完才重新洗牌。
+   */
+  const refillShuffleBag = (excludeIndex = currentIndex.value) => {
+    const bag = []
+    for (let i = 0; i < playlistLength.value; i++) {
+      if (i !== excludeIndex) bag.push(i)
+    }
+    for (let i = bag.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[bag[i], bag[j]] = [bag[j], bag[i]]
+    }
+    shuffleBag.value = bag
   }
 
   const transitionToIndex = async (targetIndex) => {
@@ -41,12 +75,19 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
     isPlaying.value = true
   }
 
+  // 重播目前這首（清單只剩一首、或單曲循環時使用）
+  const replayCurrent = async () => {
+    currentVideo.value = { ...currentPlaylist.value.items[currentIndex.value] }
+    await nextTick()
+    isPlaying.value = true
+  }
+
   // Actions
   const playVideo = (videoInfo) => {
     currentVideo.value = videoInfo
     currentPlaylist.value = null
     currentIndex.value = 0
-    resetShuffleHistory()
+    resetNavigationHistory()
     isPlaying.value = true
     isVisible.value = true
     isMinimized.value = false
@@ -59,10 +100,29 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
     currentPlaylist.value = playlist
     currentIndex.value = startIndex
     currentVideo.value = playlist.items[startIndex]
-    resetShuffleHistory()
+    resetNavigationHistory()
+    if (shuffleEnabled.value) refillShuffleBag(startIndex)
     isPlaying.value = true
     isVisible.value = true
     isMinimized.value = false
+  }
+
+  /**
+   * 從清單中直接點播某一首：算是一次正常的前進，
+   * 所以把目前這首推進歷史，並清掉前方待重播的紀錄。
+   */
+  const playAt = async (index) => {
+    if (!hasPlaylist.value) return
+    if (index < 0 || index >= playlistLength.value) return
+    if (index === currentIndex.value) return
+
+    playHistory.value.push(currentIndex.value)
+    playForward.value = []
+    if (shuffleEnabled.value) {
+      // 手動點播的那首要從本輪隨機池移除，免得等一下又抽到
+      shuffleBag.value = shuffleBag.value.filter(i => i !== index)
+    }
+    await transitionToIndex(index)
   }
 
   const play = () => {
@@ -77,55 +137,67 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
     isPlaying.value = !isPlaying.value
   }
 
-  // Task 4: 改進 next() 函數，添加 async/await 和更好的狀態管理
   const next = async () => {
     if (!hasPlaylist.value) return
 
-    const playlistLength = currentPlaylist.value.items.length
+    const length = playlistLength.value
 
-    // 隨機播放邏輯
-    let nextIndex
     if (shuffleEnabled.value) {
-      const availableIndices = Array.from({ length: playlistLength }, (_, i) => i)
-        .filter(i => i !== currentIndex.value)
-
-      if (availableIndices.length === 0) {
-        currentVideo.value = { ...currentPlaylist.value.items[currentIndex.value] }
-        await nextTick()
-        isPlaying.value = true
+      // 先前按過「上一首」的話，下一首要走回原本那條路，而不是重抽
+      if (playForward.value.length > 0) {
+        const forwardIndex = playForward.value.pop()
+        playHistory.value.push(currentIndex.value)
+        await transitionToIndex(forwardIndex)
         return
       }
 
-      shuffleHistory.value.push(currentIndex.value)
-      nextIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)]
-    } else {
-      // 順序播放
-      nextIndex = currentIndex.value + 1
-      if (nextIndex >= playlistLength) {
-        // 播放清單循環：回到第一首（預設行為）
-        nextIndex = 0
+      if (length <= 1) {
+        await replayCurrent()
+        return
       }
+
+      if (shuffleBag.value.length === 0) {
+        refillShuffleBag(currentIndex.value)
+      }
+      const nextIndex = shuffleBag.value.shift()
+      if (nextIndex === undefined) {
+        await replayCurrent()
+        return
+      }
+
+      playHistory.value.push(currentIndex.value)
+      await transitionToIndex(nextIndex)
+      return
     }
 
+    // 順序播放：清單循環回到第一首
+    playHistory.value.push(currentIndex.value)
+    playForward.value = []
+    const nextIndex = (currentIndex.value + 1) % length
     await transitionToIndex(nextIndex)
   }
 
   const previous = async () => {
     if (!hasPlaylist.value) return
 
-    if (shuffleEnabled.value && shuffleHistory.value.length > 0) {
-      const previousShuffleIndex = shuffleHistory.value.pop()
-      await transitionToIndex(previousShuffleIndex)
+    if (shuffleEnabled.value) {
+      // 隨機模式只沿著實際播過的路徑往回走；沒有歷史就代表沒有「上一首」
+      if (playHistory.value.length === 0) return
+      const previousIndex = playHistory.value.pop()
+      playForward.value.push(currentIndex.value)
+      await transitionToIndex(previousIndex)
       return
     }
+
+    playForward.value = []
+    if (playHistory.value.length > 0) playHistory.value.pop()
 
     const prevIndex = currentIndex.value - 1
     if (prevIndex >= 0) {
       await transitionToIndex(prevIndex)
     } else {
       // Loop to last video
-      const lastIndex = currentPlaylist.value.items.length - 1
-      await transitionToIndex(lastIndex)
+      await transitionToIndex(playlistLength.value - 1)
     }
   }
 
@@ -140,30 +212,30 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
   const close = () => {
     isVisible.value = false
     isPlaying.value = false
-    resetShuffleHistory()
+    resetNavigationHistory()
   }
 
   const clear = () => {
     currentVideo.value = null
     currentPlaylist.value = null
     currentIndex.value = 0
-    resetShuffleHistory()
+    resetNavigationHistory()
     isPlaying.value = false
     isVisible.value = false
     isMinimized.value = false
   }
 
   const toggleLoopMode = () => {
-    const oldMode = loopMode.value
     loopMode.value = loopMode.value === 'playlist' ? 'single' : 'playlist'
-    console.log('toggleLoopMode: changed from', oldMode, 'to', loopMode.value)
   }
 
   const toggleShuffle = () => {
-    const oldValue = shuffleEnabled.value
     shuffleEnabled.value = !shuffleEnabled.value
-    resetShuffleHistory()
-    console.log('toggleShuffle: changed from', oldValue, 'to', shuffleEnabled.value)
+    // 切換模式等於重新開始一段路徑，舊的前進／後退紀錄不再適用
+    resetNavigationHistory()
+    if (shuffleEnabled.value && hasPlaylist.value) {
+      refillShuffleBag(currentIndex.value)
+    }
   }
 
   // 音量控制方法
@@ -203,6 +275,9 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
     isVisible,
     loopMode,
     shuffleEnabled,
+    playHistory,
+    playForward,
+    shuffleBag,
     playerStatus,
     volume,
     isMuted,
@@ -210,9 +285,12 @@ export const useGlobalPlayerStore = defineStore('globalPlayer', () => {
     hasVideo,
     hasPlaylist,
     isPlayerReady,
+    playlistLength,
+    canGoPrevious,
     // Actions
     playVideo,
     playPlaylist,
+    playAt,
     play,
     pause,
     togglePlay,

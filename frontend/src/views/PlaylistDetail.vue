@@ -215,16 +215,27 @@ onMounted(async () => {
 const selectVideo = (index) => {
   // Play the playlist using global player store
   // 不需要設置本地狀態，globalPlayerStore 會自動更新
-  if (playlist.value && items.value.length > 0) {
-    globalPlayerStore.playPlaylist({
-      id: playlist.value.id,
-      name: playlist.value.name,
-      items: items.value
-    }, index)
+  if (!playlist.value || items.value.length === 0) return
 
-    // 保持播放器最小化，避免視覺上"跳轉"到播放器頁面
-    globalPlayerStore.minimize()
+  // 同一個清單已經在播了就只跳曲，不要重新載入清單，
+  // 否則會把隨機播放的前進／後退歷史整個清掉
+  const isSamePlaylistPlaying =
+    globalPlayerStore.isVisible &&
+    globalPlayerStore.currentPlaylist?.id === playlist.value.id
+
+  if (isSamePlaylistPlaying) {
+    globalPlayerStore.playAt(index)
+    return
   }
+
+  globalPlayerStore.playPlaylist({
+    id: playlist.value.id,
+    name: playlist.value.name,
+    items: items.value
+  }, index)
+
+  // 保持播放器最小化，避免視覺上"跳轉"到播放器頁面
+  globalPlayerStore.minimize()
 }
 
 const playNext = () => {
