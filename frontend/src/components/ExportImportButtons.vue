@@ -1,7 +1,7 @@
 <template>
   <div class="export-import-buttons">
     <BaseButton
-      variant="success"
+      variant="secondary"
       :icon="ArrowUpTrayIcon"
       :disabled="!canExport"
       :loading="isExporting"
@@ -12,7 +12,7 @@
       匯出
     </BaseButton>
     <BaseButton
-      variant="info"
+      variant="secondary"
       :icon="ArrowDownTrayIcon"
       :loading="isImporting"
       aria-label="匯入資料"

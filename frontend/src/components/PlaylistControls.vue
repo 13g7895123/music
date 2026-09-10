@@ -121,17 +121,17 @@ defineEmits(['prev', 'next', 'play'])
   flex: 1;
   min-height: var(--touch-target-comfortable);
   padding: var(--space-3);
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: all var(--transition-fast);
   color: var(--text-primary);
 }
 
 .btn-control:hover {
-  background: var(--color-neutral-100);
-  border-color: var(--border-color-hover);
+  background: var(--cream-200);
+  border-color: var(--cream-400);
 }
 
 .btn-control:active {
@@ -144,19 +144,21 @@ defineEmits(['prev', 'next', 'play'])
 }
 
 .btn-play {
-  background: var(--color-info);
-  color: white;
-  border-color: var(--color-info);
+  background: var(--accent-gradient);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(201, 116, 66, 0.28);
 }
 
 .btn-play:hover {
-  background: var(--color-info-dark);
-  border-color: var(--color-info-dark);
+  background: var(--accent-gradient-hover);
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(201, 116, 66, 0.34);
 }
 
 .btn-play.playing {
-  background: var(--color-warning);
-  border-color: var(--color-warning);
+  background: var(--accent-gradient);
+  border-color: transparent;
 }
 
 .btn-play.playing:hover {

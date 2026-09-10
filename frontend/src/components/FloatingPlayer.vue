@@ -1,249 +1,296 @@
 <template>
   <Teleport to="body">
-    <div v-if="playerStore.isVisible && playerStore.currentVideo" class="floating-player-container">
-      <!-- Minimized View -->
-      <div v-show="playerStore.isMinimized" class="floating-player minimized" role="region" aria-label="播放器控制">
-        <div class="minimized-content">
-          <div class="video-info" @click="playerStore.maximize" role="button" tabindex="0" @keypress.enter="playerStore.maximize">
-            <div class="thumbnail">
-              <img :src="playerStore.currentVideo.thumbnail_url" :alt="playerStore.currentVideo.title" />
-            </div>
-            <div class="info">
-              <div class="title">{{ truncateTitle(playerStore.currentVideo.title, 30) }}</div>
-              <div class="status">
-                <span v-if="playerStore.hasPlaylist">
-                  {{ playerStore.currentIndex + 1 }} / {{ playerStore.currentPlaylist.items.length }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="controls">
-            <button
-              v-if="playerStore.hasPlaylist"
-              @click="playerStore.previous"
-              class="btn-control"
-              v-tooltip="'上一首'"
-              aria-label="上一首"
-            >
-              <BackwardIcon class="icon" />
-            </button>
-            <button
-              @click="playerStore.togglePlay"
-              class="btn-control btn-play"
-              v-tooltip="playerStore.isPlaying ? '暫停' : '播放'"
-              :aria-label="playerStore.isPlaying ? '暫停' : '播放'"
-              :aria-pressed="playerStore.isPlaying"
-            >
-              <PauseIcon v-if="playerStore.isPlaying" class="icon" />
-              <PlayIcon v-else class="icon" />
-            </button>
-            <button
-              v-if="playerStore.hasPlaylist"
-              @click="playerStore.next"
-              class="btn-control"
-              v-tooltip="'下一首'"
-              aria-label="下一首"
-            >
-              <ForwardIcon class="icon" />
-            </button>
-            <button
-              v-if="playerStore.hasPlaylist"
-              @click.stop="playerStore.toggleLoopMode"
-              class="btn-control btn-mode-mini"
-              :class="{ active: playerStore.loopMode !== 'playlist' }"
-              v-tooltip="playerStore.loopMode === 'playlist' ? '清單循環' : '單曲循環'"
-              :aria-label="playerStore.loopMode === 'playlist' ? '清單循環' : '單曲循環'"
-              :aria-pressed="playerStore.loopMode !== 'playlist'"
-            >
-              <ArrowPathIcon v-if="playerStore.loopMode === 'playlist'" class="icon" />
-              <ArrowPathRoundedSquareIcon v-else class="icon" />
-            </button>
-            <button
-              v-if="playerStore.hasPlaylist"
-              @click.stop="playerStore.toggleShuffle"
-              class="btn-control btn-mode-mini"
-              :class="{ active: playerStore.shuffleEnabled }"
-              v-tooltip="'隨機播放'"
-              aria-label="隨機播放"
-              :aria-pressed="playerStore.shuffleEnabled"
-            >
-              <ArrowsRightLeftIcon class="icon" />
-            </button>
-            <button
-              @click.stop="playerStore.toggleMute"
-              class="btn-control btn-volume"
-              :class="{ muted: playerStore.isMuted }"
-              v-tooltip="playerStore.isMuted ? '取消靜音' : '靜音'"
-              :aria-label="playerStore.isMuted ? '取消靜音' : '靜音'"
-              :aria-pressed="playerStore.isMuted"
-            >
-              <SpeakerXMarkIcon v-if="playerStore.isMuted" class="icon" />
-              <SpeakerWaveIcon v-else class="icon" />
-            </button>
-            <button
-              @click="playerStore.maximize"
-              class="btn-control"
-              v-tooltip="'展開'"
-              aria-label="展開播放器"
-            >
-              <ChevronUpIcon class="icon" />
-            </button>
-            <button
-              @click="playerStore.close"
-              class="btn-control btn-close"
-              v-tooltip="'關閉'"
-              aria-label="關閉播放器"
-            >
-              <XMarkIcon class="icon" />
-            </button>
-          </div>
+    <Transition name="pl-pop">
+      <div
+        v-if="playerStore.isVisible && playerStore.currentVideo"
+        class="pl-player"
+        :class="{
+          mini: playerStore.isMinimized,
+          expanded: !playerStore.isMinimized,
+          fullscreen: isFullscreen && !playerStore.isMinimized,
+          'queue-open': showQueue && !playerStore.isMinimized
+        }"
+        role="region"
+        aria-label="播放器"
+      >
+        <!-- 迷你模式頂部的細進度線 -->
+        <div
+          class="pl-miniprogress"
+          aria-hidden="true"
+        >
+          <span :style="{ width: progressPercent + '%' }" />
         </div>
-        <!-- Hidden YouTube Player for minimized mode -->
-        <div class="hidden-player">
-          <div id="floating-youtube-player-minimized" class="youtube-container-minimized"></div>
-        </div>
-      </div>
 
-      <!-- Expanded View -->
-      <div v-show="!playerStore.isMinimized" class="floating-player expanded" :class="{ 'fullscreen': isFullscreen }" role="region" aria-label="展開的播放器">
-        <div class="player-header">
-          <h3>{{ playerStore.currentVideo.title }}</h3>
-          <div class="header-actions">
+        <div class="pl-shell">
+          <!-- ===== 影片舞台（永遠留在同一個 DOM 位置，切換大小不會重載） ===== -->
+          <div
+            class="pl-stage"
+            @click="playerStore.isMinimized && playerStore.maximize()"
+          >
+            <div class="pl-stage-inner">
+              <div id="pl-yt-player" />
+            </div>
+            <div
+              v-if="playerStore.isMinimized"
+              class="pl-stage-veil"
+            >
+              <ChevronUpIcon class="icon-sm" />
+            </div>
+          </div>
+
+          <!-- ===== 標題 ===== -->
+          <div class="pl-head">
+            <div class="pl-titlewrap">
+              <h3
+                class="pl-title"
+                :title="playerStore.currentVideo.title"
+              >
+                {{ playerStore.currentVideo.title }}
+              </h3>
+              <p class="pl-sub">
+                <span
+                  v-if="playerStore.hasPlaylist"
+                  class="pl-count"
+                >
+                  {{ playerStore.currentIndex + 1 }} / {{ playerStore.playlistLength }}
+                </span>
+                <span
+                  v-if="playerStore.hasPlaylist && playerStore.shuffleEnabled"
+                  class="pl-chip"
+                >隨機</span>
+                <span
+                  v-if="playerStore.hasPlaylist && playerStore.loopMode === 'single'"
+                  class="pl-chip"
+                >單曲循環</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- ===== 視窗操作 ===== -->
+          <div class="pl-window">
             <button
-              @click="toggleFullscreen"
-              class="btn-icon"
-              v-tooltip="isFullscreen ? '退出滿版' : '滿版'"
+              v-if="playerStore.hasPlaylist"
+              v-tooltip="'待播清單 (Q)'"
+              class="pl-iconbtn pl-only-expanded"
+              :class="{ on: showQueue }"
+              :aria-pressed="showQueue"
+              aria-label="待播清單"
+              @click="showQueue = !showQueue"
+            >
+              <QueueListIcon class="icon-sm" />
+            </button>
+            <button
+              v-tooltip="isFullscreen ? '退出滿版 (F)' : '滿版 (F)'"
+              class="pl-iconbtn pl-only-expanded"
               :aria-label="isFullscreen ? '退出滿版' : '滿版'"
+              @click="toggleFullscreen"
             >
-              <ArrowsPointingInIcon v-if="isFullscreen" class="icon-sm" />
-              <ArrowsPointingOutIcon v-else class="icon-sm" />
+              <ArrowsPointingInIcon
+                v-if="isFullscreen"
+                class="icon-sm"
+              />
+              <ArrowsPointingOutIcon
+                v-else
+                class="icon-sm"
+              />
             </button>
             <button
-              @click="playerStore.minimize"
-              class="btn-icon"
-              v-tooltip="'最小化'"
-              aria-label="最小化播放器"
+              v-tooltip="playerStore.isMinimized ? '展開' : '縮小'"
+              class="pl-iconbtn"
+              :aria-label="playerStore.isMinimized ? '展開播放器' : '縮小播放器'"
+              @click="playerStore.isMinimized ? playerStore.maximize() : playerStore.minimize()"
             >
-              <ChevronDownIcon class="icon-sm" />
+              <ChevronUpIcon
+                v-if="playerStore.isMinimized"
+                class="icon-sm"
+              />
+              <ChevronDownIcon
+                v-else
+                class="icon-sm"
+              />
             </button>
             <button
-              @click="playerStore.close"
-              class="btn-icon"
               v-tooltip="'關閉'"
+              class="pl-iconbtn pl-close"
               aria-label="關閉播放器"
+              @click="playerStore.close()"
             >
               <XMarkIcon class="icon-sm" />
             </button>
           </div>
-        </div>
-        <div class="player-body">
-          <div id="floating-youtube-player" class="youtube-container"></div>
-        </div>
-        <!-- 音量控制區域 - 放在影片下方 -->
-        <div class="volume-control-section">
-          <button
-            @click.stop="playerStore.toggleMute"
-            class="btn-volume"
-            :class="{ muted: playerStore.isMuted }"
-            v-tooltip="playerStore.isMuted ? '取消靜音' : '靜音'"
-            :aria-label="playerStore.isMuted ? '取消靜音' : '靜音'"
-            :aria-pressed="playerStore.isMuted"
+
+          <!-- ===== 待播清單 ===== -->
+          <aside
+            v-if="playerStore.hasPlaylist"
+            class="pl-queue"
+            aria-label="待播清單"
           >
-            <SpeakerXMarkIcon v-if="playerStore.isMuted" class="icon" />
-            <SpeakerWaveIcon v-else-if="playerStore.volume > 50" class="icon" />
-            <SpeakerWaveIcon v-else class="icon" />
-          </button>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            v-model="playerStore.volume"
-            @input="handleVolumeChange"
-            class="volume-slider"
-            :style="`--volume-percentage: ${playerStore.volume}%`"
-            :aria-label="'音量：' + playerStore.volume + '%'"
-          />
-          <span class="volume-value">{{ playerStore.volume }}%</span>
-        </div>
-        <div class="player-controls">
-          <!-- 播放列表控制 -->
-          <template v-if="playerStore.hasPlaylist">
-            <div class="playback-controls">
-              <button
-                @click="playerStore.previous"
-                class="btn-control"
-                v-tooltip="'上一首'"
-                aria-label="上一首"
-              >
-                <BackwardIcon class="icon" />
-              </button>
-              <button
-                @click="playerStore.togglePlay"
-                class="btn-control btn-play"
-                v-tooltip="playerStore.isPlaying ? '暫停' : '播放'"
-                :aria-label="playerStore.isPlaying ? '暫停' : '播放'"
-                :aria-pressed="playerStore.isPlaying"
-              >
-                <PauseIcon v-if="playerStore.isPlaying" class="icon" />
-                <PlayIcon v-else class="icon" />
-              </button>
-              <button
-                @click="playerStore.next"
-                class="btn-control"
-                v-tooltip="'下一首'"
-                aria-label="下一首"
-              >
-                <ForwardIcon class="icon" />
-              </button>
+            <div class="pl-queue-head">
+              <span>待播清單</span>
+              <span class="pl-queue-count">{{ playerStore.playlistLength }} 首</span>
             </div>
-            <div class="mode-controls">
-              <button
-                @click.stop="playerStore.toggleLoopMode"
-                class="btn-mode"
-                :class="{ active: playerStore.loopMode !== 'playlist' }"
-                v-tooltip="playerStore.loopMode === 'playlist' ? '清單循環' : '單曲循環'"
-                :aria-label="playerStore.loopMode === 'playlist' ? '清單循環' : '單曲循環'"
-                :aria-pressed="playerStore.loopMode !== 'playlist'"
+            <ul class="pl-queue-list">
+              <li
+                v-for="(item, index) in playerStore.currentPlaylist.items"
+                :key="item.id ?? index"
               >
-                <ArrowPathIcon v-if="playerStore.loopMode === 'playlist'" class="icon" />
-                <ArrowPathRoundedSquareIcon v-else class="icon" />
-              </button>
-              <button
-                @click.stop="playerStore.toggleShuffle"
-                class="btn-mode"
-                :class="{ active: playerStore.shuffleEnabled }"
-                v-tooltip="'隨機播放'"
-                aria-label="隨機播放"
-                :aria-pressed="playerStore.shuffleEnabled"
-              >
-                <ArrowsRightLeftIcon class="icon" />
-              </button>
+                <button
+                  class="pl-queue-item"
+                  :class="{ current: index === playerStore.currentIndex }"
+                  :aria-current="index === playerStore.currentIndex ? 'true' : undefined"
+                  @click="playerStore.playAt(index)"
+                >
+                  <span class="pl-queue-index">
+                    <SpeakerWaveIcon
+                      v-if="index === playerStore.currentIndex"
+                      class="icon-xs"
+                    />
+                    <template v-else>{{ index + 1 }}</template>
+                  </span>
+                  <span class="pl-queue-title">{{ item.title }}</span>
+                  <span class="pl-queue-time">{{ formatDuration(item.duration) }}</span>
+                </button>
+              </li>
+            </ul>
+          </aside>
+
+          <!-- ===== 進度 + 控制 ===== -->
+          <div class="pl-transport">
+            <!-- 進度條 -->
+            <div class="pl-progress pl-only-expanded">
+              <span class="pl-time">{{ formatTime(displayTime) }}</span>
+              <div class="pl-track">
+                <div
+                  class="pl-track-fill"
+                  :style="{ width: progressPercent + '%' }"
+                />
+                <input
+                  type="range"
+                  class="pl-range"
+                  min="0"
+                  :max="duration || 0"
+                  step="0.1"
+                  :value="displayTime"
+                  :disabled="!duration"
+                  :aria-label="'播放進度：' + formatTime(displayTime) + ' / ' + formatTime(duration)"
+                  @input="onSeekInput"
+                  @change="onSeekCommit"
+                >
+              </div>
+              <span class="pl-time">{{ formatTime(duration) }}</span>
             </div>
-            <div class="track-info" aria-live="polite">
-              {{ playerStore.currentIndex + 1 }} / {{ playerStore.currentPlaylist.items.length }}
+
+            <!-- 按鈕列 -->
+            <div class="pl-buttons">
+              <div class="pl-modes pl-only-expanded">
+                <button
+                  v-if="playerStore.hasPlaylist"
+                  v-tooltip="playerStore.shuffleEnabled ? '隨機播放：開 (S)' : '隨機播放：關 (S)'"
+                  class="pl-iconbtn"
+                  :class="{ on: playerStore.shuffleEnabled }"
+                  :aria-pressed="playerStore.shuffleEnabled"
+                  aria-label="隨機播放"
+                  @click="playerStore.toggleShuffle()"
+                >
+                  <ArrowsRightLeftIcon class="icon-sm" />
+                </button>
+                <button
+                  v-if="playerStore.hasPlaylist"
+                  v-tooltip="playerStore.loopMode === 'single' ? '單曲循環 (R)' : '清單循環 (R)'"
+                  class="pl-iconbtn"
+                  :class="{ on: playerStore.loopMode === 'single' }"
+                  :aria-pressed="playerStore.loopMode === 'single'"
+                  aria-label="循環模式"
+                  @click="playerStore.toggleLoopMode()"
+                >
+                  <ArrowPathRoundedSquareIcon
+                    v-if="playerStore.loopMode === 'single'"
+                    class="icon-sm"
+                  />
+                  <ArrowPathIcon
+                    v-else
+                    class="icon-sm"
+                  />
+                </button>
+              </div>
+
+              <div class="pl-playback">
+                <button
+                  v-if="playerStore.hasPlaylist"
+                  v-tooltip="prevTooltip"
+                  class="pl-iconbtn pl-step"
+                  :disabled="!playerStore.canGoPrevious"
+                  aria-label="上一首"
+                  @click="playerStore.previous()"
+                >
+                  <BackwardIcon class="icon" />
+                </button>
+                <button
+                  v-tooltip="playerStore.isPlaying ? '暫停 (空白鍵)' : '播放 (空白鍵)'"
+                  class="pl-playbtn"
+                  :aria-label="playerStore.isPlaying ? '暫停' : '播放'"
+                  :aria-pressed="playerStore.isPlaying"
+                  @click="playerStore.togglePlay()"
+                >
+                  <PauseIcon
+                    v-if="playerStore.isPlaying"
+                    class="icon"
+                  />
+                  <PlayIcon
+                    v-else
+                    class="icon"
+                  />
+                </button>
+                <button
+                  v-if="playerStore.hasPlaylist"
+                  v-tooltip="'下一首'"
+                  class="pl-iconbtn pl-step"
+                  aria-label="下一首"
+                  @click="playerStore.next()"
+                >
+                  <ForwardIcon class="icon" />
+                </button>
+              </div>
+
+              <div class="pl-volume pl-only-expanded">
+                <button
+                  v-tooltip="playerStore.isMuted ? '取消靜音 (M)' : '靜音 (M)'"
+                  class="pl-iconbtn"
+                  :class="{ muted: playerStore.isMuted }"
+                  :aria-label="playerStore.isMuted ? '取消靜音' : '靜音'"
+                  :aria-pressed="playerStore.isMuted"
+                  @click="playerStore.toggleMute()"
+                >
+                  <SpeakerXMarkIcon
+                    v-if="playerStore.isMuted || playerStore.volume === 0"
+                    class="icon-sm"
+                  />
+                  <SpeakerWaveIcon
+                    v-else
+                    class="icon-sm"
+                  />
+                </button>
+                <input
+                  type="range"
+                  class="pl-range pl-volume-range"
+                  min="0"
+                  max="100"
+                  :value="playerStore.isMuted ? 0 : playerStore.volume"
+                  :style="{ '--pct': (playerStore.isMuted ? 0 : playerStore.volume) + '%' }"
+                  :aria-label="'音量：' + playerStore.volume + '%'"
+                  @input="onVolumeInput"
+                >
+              </div>
             </div>
-          </template>
-          <!-- 單一影片控制 -->
-          <template v-else>
-            <button
-              @click="playerStore.togglePlay"
-              class="btn-control btn-play"
-              v-tooltip="playerStore.isPlaying ? '暫停' : '播放'"
-              :aria-label="playerStore.isPlaying ? '暫停' : '播放'"
-              :aria-pressed="playerStore.isPlaying"
-            >
-              <PauseIcon v-if="playerStore.isPlaying" class="icon-lg" />
-              <PlayIcon v-else class="icon-lg" />
-            </button>
-          </template>
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>
 
 <script setup>
-import { watch, onMounted, onUnmounted, nextTick, ref } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useGlobalPlayerStore } from '@/stores/globalPlayerStore'
 import {
   PlayIcon,
@@ -259,45 +306,72 @@ import {
   ArrowsPointingInIcon,
   ArrowsPointingOutIcon,
   SpeakerWaveIcon,
-  SpeakerXMarkIcon
+  SpeakerXMarkIcon,
+  QueueListIcon
 } from '@heroicons/vue/24/solid'
 
 const playerStore = useGlobalPlayerStore()
+
 const isFullscreen = ref(false)
-
-// Debug logging
-watch(() => playerStore.isVisible, (val) => {
-  console.log('FloatingPlayer: isVisible changed to', val)
-})
-
-watch(() => playerStore.currentVideo, (val) => {
-  console.log('FloatingPlayer: currentVideo changed to', val)
-})
-
-console.log('FloatingPlayer: Component mounted')
+const showQueue = ref(true)
+const currentTime = ref(0)
+const duration = ref(0)
+const seekPreview = ref(null) // 拖曳中的暫時值，放開才真的 seek
 
 let ytPlayer = null
 let apiReady = false
 let playerReady = false
+let pollTimer = null
+let initPromise = null
+let isUpdatingFromYouTube = false
 
-const disposePlayerInstance = () => {
-  if (ytPlayer && typeof ytPlayer.destroy === 'function') {
-    try {
-      ytPlayer.destroy()
-    } catch (error) {
-      console.warn('FloatingPlayer: Failed to destroy YouTube player instance', error)
-    }
-  }
-  ytPlayer = null
-  playerReady = false
+/* ---------------- computed ---------------- */
+
+const displayTime = computed(() => seekPreview.value ?? currentTime.value)
+
+const progressPercent = computed(() => {
+  if (!duration.value) return 0
+  return Math.min(100, (displayTime.value / duration.value) * 100)
+})
+
+const prevTooltip = computed(() => {
+  if (playerStore.canGoPrevious) return '上一首'
+  return '隨機播放中，還沒有播過的上一首'
+})
+
+/* ---------------- helpers ---------------- */
+
+const extractVideoId = (url) => {
+  if (!url) return null
+  const match = url.match(/[?&]v=([^&]+)/)
+  return match ? match[1] : null
 }
 
-// 全螢幕切換
-const toggleFullscreen = () => {
-  isFullscreen.value = !isFullscreen.value
+const resolveVideoId = () => {
+  const video = playerStore.currentVideo
+  if (!video) return null
+  return video.video_id || extractVideoId(video.youtube_url)
 }
 
-// 載入 YouTube IFrame API
+const formatTime = (seconds) => {
+  if (!seconds || Number.isNaN(seconds)) return '0:00'
+  const total = Math.floor(seconds)
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+const formatDuration = (value) => {
+  if (!value) return ''
+  // 後端可能給秒數，也可能給 "3:45" 這種字串
+  if (typeof value === 'string' && value.includes(':')) return value
+  return formatTime(Number(value))
+}
+
+/* ---------------- YouTube API ---------------- */
+
 const loadYouTubeAPI = () => {
   return new Promise((resolve, reject) => {
     if (window.YT && window.YT.Player) {
@@ -307,7 +381,6 @@ const loadYouTubeAPI = () => {
     }
 
     if (document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-      // Script already loading
       const checkInterval = setInterval(() => {
         if (window.YT && window.YT.Player) {
           clearInterval(checkInterval)
@@ -332,958 +405,975 @@ const loadYouTubeAPI = () => {
   })
 }
 
-// 初始化播放器
+const disposePlayer = () => {
+  stopPolling()
+  initPromise = null
+  if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+    try {
+      ytPlayer.destroy()
+    } catch (error) {
+      console.warn('FloatingPlayer: 銷毀播放器失敗', error)
+    }
+  }
+  ytPlayer = null
+  playerReady = false
+  currentTime.value = 0
+  duration.value = 0
+}
+
+const startPolling = () => {
+  if (pollTimer) return
+  pollTimer = setInterval(() => {
+    if (!ytPlayer || !playerReady) return
+    if (seekPreview.value !== null) return // 使用者正在拖曳，別覆蓋
+    try {
+      currentTime.value = ytPlayer.getCurrentTime() || 0
+      const d = ytPlayer.getDuration() || 0
+      if (d && d !== duration.value) duration.value = d
+    } catch {
+      /* 播放器還沒準備好，下一輪再試 */
+    }
+  }, 250)
+}
+
+const stopPolling = () => {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+// 初始化的唯一入口：同時有多個 watcher 想建立播放器時，
+// 只會真的建立一次（否則兩個 YT.Player 會搶同一個 DOM 節點，
+// 互相把對方的 iframe 取代掉，畫面就變成空的）
+const ensurePlayer = (videoId) => {
+  if (!videoId) return Promise.resolve()
+  if (ytPlayer) return Promise.resolve()
+  if (initPromise) return initPromise
+  initPromise = initPlayer(videoId).finally(() => { initPromise = null })
+  return initPromise
+}
+
 const initPlayer = async (videoId) => {
+  if (!videoId) return
+  if (ytPlayer) return
   if (!apiReady) {
     try {
       await loadYouTubeAPI()
     } catch (error) {
-      console.error('Failed to load YouTube API:', error)
+      console.error('FloatingPlayer: YouTube API 載入失敗', error)
       return
     }
   }
-
-  if (!playerStore.isVisible) {
-    console.log('FloatingPlayer: Skipping initialization while player is hidden')
-    return
-  }
+  if (!playerStore.isVisible) return
 
   await nextTick()
+  if (ytPlayer) return
+  const container = document.getElementById('pl-yt-player')
+  if (!container) return
 
-  // 根據最小化狀態選擇正確的容器
-  const containerId = playerStore.isMinimized ? 'floating-youtube-player-minimized' : 'floating-youtube-player'
-  const container = document.getElementById(containerId)
-  if (!container) {
-    console.log('FloatingPlayer: Container not found:', containerId)
-    return
-  }
-  
-  console.log('FloatingPlayer: Using container:', containerId)
-
-  // 如果播放器存在，嘗試更新影片
-  if (ytPlayer) {
-    try {
-      // 檢查播放器是否仍然附加到 DOM
-      const iframe = container.querySelector('iframe')
-      if (iframe) {
-        console.log('FloatingPlayer: Updating existing player with video', videoId)
-        ytPlayer.loadVideoById(videoId)
-        if (playerStore.isPlaying) {
-          ytPlayer.playVideo()
-        }
-        return
-      } else {
-        // 播放器不在 DOM 中，需要重新創建
-        console.log('FloatingPlayer: Player not in DOM, recreating...')
-        disposePlayerInstance()
-      }
-    } catch (error) {
-      console.error('FloatingPlayer: Error updating player, will recreate:', error)
-      disposePlayerInstance()
-    }
-  }
-
-  console.log('FloatingPlayer: Creating new YouTube player with video', videoId, 'in container', containerId)
   playerReady = false
-  ytPlayer = new window.YT.Player(containerId, {
+  ytPlayer = new window.YT.Player('pl-yt-player', {
     height: '100%',
     width: '100%',
-    videoId: videoId,
+    videoId,
     playerVars: {
       autoplay: playerStore.isPlaying ? 1 : 0,
-      controls: 1,
+      controls: 0,
       modestbranding: 1,
-      rel: 0
+      rel: 0,
+      playsinline: 1
     },
     events: {
       onReady: (event) => {
-        console.log('FloatingPlayer: YouTube player ready, isPlaying:', playerStore.isPlaying)
         playerReady = true
-
-        // 設定初始音量和靜音狀態
         event.target.setVolume(playerStore.volume)
-        if (playerStore.isMuted) {
-          event.target.mute()
-        }
-
-        if (playerStore.isPlaying) {
-          event.target.playVideo()
-        }
+        if (playerStore.isMuted) event.target.mute()
+        duration.value = event.target.getDuration() || 0
+        if (playerStore.isPlaying) event.target.playVideo()
+        startPolling()
       },
       onStateChange: (event) => {
-        console.log('FloatingPlayer: YouTube state changed:', event.data)
-        if (event.data === window.YT.PlayerState.ENDED) {
-          console.log('FloatingPlayer: Video ended, loopMode:', playerStore.loopMode, 'shuffleEnabled:', playerStore.shuffleEnabled)
-          if (playerStore.hasPlaylist) {
-            if (playerStore.loopMode === 'single') {
-              // 單曲循環模式：重播當前影片
-              console.log('FloatingPlayer: Single loop mode, replaying')
-              ytPlayer.seekTo(0)
-              ytPlayer.playVideo()
-            } else {
-              // next() function will handle shuffle and playlist loop
-              playerStore.next()
-            }
-          } else {
-            // Single video - replay it
-            console.log('FloatingPlayer: Single video ended, replaying')
-            ytPlayer.seekTo(0)
-            ytPlayer.playVideo()
-          }
-        } else if (event.data === window.YT.PlayerState.PLAYING) {
-          console.log('FloatingPlayer: Video playing, calling playerStore.play()')
+        const YT = window.YT.PlayerState
+        if (event.data === YT.ENDED) {
+          handleEnded()
+        } else if (event.data === YT.PLAYING) {
+          duration.value = ytPlayer.getDuration() || duration.value
           isUpdatingFromYouTube = true
           playerStore.play()
           setTimeout(() => { isUpdatingFromYouTube = false }, 50)
-        } else if (event.data === window.YT.PlayerState.PAUSED) {
-          console.log('FloatingPlayer: Video paused, calling playerStore.pause()')
+          startPolling()
+        } else if (event.data === YT.PAUSED) {
           isUpdatingFromYouTube = true
           playerStore.pause()
           setTimeout(() => { isUpdatingFromYouTube = false }, 50)
         }
+      },
+      onError: (event) => {
+        console.error('FloatingPlayer: 播放發生錯誤', event.data)
+        // 影片無法播放時自動跳下一首，避免整個清單卡住
+        if (playerStore.hasPlaylist) playerStore.next()
       }
     }
   })
 }
 
-// 監聽當前影片的 video_id 變化（更精確的監聽）
-watch(() => playerStore.currentVideo?.video_id, (newVideoId, oldVideoId) => {
-  console.log('FloatingPlayer: currentVideo.video_id changed', {
-    newVideoId,
-    oldVideoId,
-    currentVideo: playerStore.currentVideo?.title
-  })
-
-  // 只有當 video_id 真的改變時才更新
-  if (newVideoId && newVideoId !== oldVideoId) {
-    const videoId = newVideoId || extractVideoId(playerStore.currentVideo?.youtube_url)
-    console.log('FloatingPlayer: Extracted video ID:', videoId, 'ytPlayer exists:', !!ytPlayer, 'isMinimized:', playerStore.isMinimized)
-
-    if (videoId) {
-      // 無論是否最小化都要更新影片
-      if (ytPlayer && playerReady) {
-        // 如果播放器已存在且準備好，直接載入新影片
-        console.log('FloatingPlayer: Loading new video', videoId, 'playerReady:', playerReady)
-        try {
-          ytPlayer.loadVideoById(videoId)
-          if (playerStore.isPlaying) {
-            console.log('FloatingPlayer: Auto-playing after load')
-            ytPlayer.playVideo()
-          }
-        } catch (error) {
-          console.error('FloatingPlayer: Error loading video:', error)
-          // 如果載入失敗，可能是播放器實例有問題，嘗試重新初始化
-          disposePlayerInstance()
-          initPlayer(videoId)
-        }
-      } else if (ytPlayer && !playerReady) {
-        // 播放器存在但尚未準備好，等待一下再重試
-        console.log('FloatingPlayer: Player exists but not ready, waiting...')
-        setTimeout(() => {
-          if (playerReady) {
-            console.log('FloatingPlayer: Player now ready, loading video', videoId)
-            try {
-              ytPlayer.loadVideoById(videoId)
-              if (playerStore.isPlaying) {
-                ytPlayer.playVideo()
-              }
-            } catch (error) {
-              console.error('FloatingPlayer: Error loading video after wait:', error)
-              disposePlayerInstance()
-              initPlayer(videoId)
-            }
-          } else {
-            console.log('FloatingPlayer: Player still not ready after wait, reinitializing')
-            disposePlayerInstance()
-            initPlayer(videoId)
-          }
-        }, 1000)
-      } else {
-        // 播放器不存在時，初始化播放器（無論是否最小化）
-        console.log('FloatingPlayer: Initializing new player (minimized:', playerStore.isMinimized, ')')
-        initPlayer(videoId)
-      }
-    }
-  }
-})
-
-// 防止循環更新的標記
-let isUpdatingFromYouTube = false
-
-// 監聽播放狀態變化
-watch(() => playerStore.isPlaying, (isPlaying) => {
-  console.log('FloatingPlayer: isPlaying changed to', isPlaying, 'ytPlayer exists:', !!ytPlayer, 'isUpdatingFromYouTube:', isUpdatingFromYouTube)
-
-  // 如果是 YouTube 播放器觸發的狀態變化，不要再次控制播放器
-  if (isUpdatingFromYouTube) {
-    console.log('FloatingPlayer: Skipping control because update came from YouTube')
+const handleEnded = () => {
+  if (playerStore.hasPlaylist && playerStore.loopMode !== 'single' && playerStore.playlistLength > 1) {
+    playerStore.next()
     return
   }
-
-  if (ytPlayer) {
-    try {
-      if (isPlaying) {
-        console.log('FloatingPlayer: Calling playVideo()')
-        ytPlayer.playVideo()
-      } else {
-        console.log('FloatingPlayer: Calling pauseVideo()')
-        ytPlayer.pauseVideo()
-      }
-    } catch (error) {
-      console.error('FloatingPlayer: Error controlling player:', error)
-    }
-  } else {
-    console.log('FloatingPlayer: Cannot control playback, ytPlayer not initialized')
+  // 單曲循環、單一影片、或清單只剩一首 → 直接重播
+  try {
+    ytPlayer.seekTo(0)
+    ytPlayer.playVideo()
+  } catch (error) {
+    console.warn('FloatingPlayer: 重播失敗', error)
   }
-})
+}
 
-// 監聽音量變化
-watch(() => playerStore.volume, (newVolume) => {
+/* ---------------- 互動 ---------------- */
+
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value
+}
+
+const onSeekInput = (event) => {
+  seekPreview.value = Number(event.target.value)
+}
+
+const onSeekCommit = (event) => {
+  const target = Number(event.target.value)
+  seekPreview.value = null
+  currentTime.value = target
   if (ytPlayer && playerReady) {
     try {
-      ytPlayer.setVolume(newVolume)
-      console.log('FloatingPlayer: Volume set to', newVolume)
+      ytPlayer.seekTo(target, true)
     } catch (error) {
-      console.error('FloatingPlayer: Error setting volume:', error)
+      console.warn('FloatingPlayer: seek 失敗', error)
     }
+  }
+}
+
+const seekBy = (delta) => {
+  if (!ytPlayer || !playerReady || !duration.value) return
+  const target = Math.max(0, Math.min(duration.value, currentTime.value + delta))
+  currentTime.value = target
+  try {
+    ytPlayer.seekTo(target, true)
+  } catch (error) {
+    console.warn('FloatingPlayer: seek 失敗', error)
+  }
+}
+
+const onVolumeInput = (event) => {
+  playerStore.setVolume(Number(event.target.value))
+}
+
+/* ---------------- 鍵盤快捷鍵 ---------------- */
+
+const isTypingTarget = (el) => {
+  if (!el) return false
+  const tag = el.tagName
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable
+}
+
+const onKeydown = (event) => {
+  if (!playerStore.isVisible || !playerStore.currentVideo) return
+  if (event.metaKey || event.ctrlKey || event.altKey) return
+  if (isTypingTarget(event.target)) return
+
+  const key = event.key.toLowerCase()
+
+  switch (key) {
+    case ' ':
+    case 'k':
+      event.preventDefault()
+      playerStore.togglePlay()
+      break
+    case 'arrowleft':
+      event.preventDefault()
+      if (event.shiftKey) playerStore.previous()
+      else seekBy(-5)
+      break
+    case 'arrowright':
+      event.preventDefault()
+      if (event.shiftKey) playerStore.next()
+      else seekBy(5)
+      break
+    case 'j':
+      event.preventDefault()
+      seekBy(-10)
+      break
+    case 'l':
+      event.preventDefault()
+      seekBy(10)
+      break
+    case 'm':
+      event.preventDefault()
+      playerStore.toggleMute()
+      break
+    case 's':
+      if (playerStore.hasPlaylist) {
+        event.preventDefault()
+        playerStore.toggleShuffle()
+      }
+      break
+    case 'r':
+      if (playerStore.hasPlaylist) {
+        event.preventDefault()
+        playerStore.toggleLoopMode()
+      }
+      break
+    case 'q':
+      if (playerStore.hasPlaylist && !playerStore.isMinimized) {
+        event.preventDefault()
+        showQueue.value = !showQueue.value
+      }
+      break
+    case 'f':
+      if (!playerStore.isMinimized) {
+        event.preventDefault()
+        toggleFullscreen()
+      }
+      break
+    case 'escape':
+      if (isFullscreen.value) {
+        event.preventDefault()
+        isFullscreen.value = false
+      } else if (!playerStore.isMinimized) {
+        event.preventDefault()
+        playerStore.minimize()
+      }
+      break
+    default:
+      break
+  }
+}
+
+/* ---------------- watchers ---------------- */
+
+watch(() => playerStore.currentVideo?.video_id, (newId, oldId) => {
+  if (!newId || newId === oldId) return
+  const videoId = resolveVideoId()
+  if (!videoId) return
+
+  currentTime.value = 0
+  duration.value = 0
+  seekPreview.value = null
+
+  if (ytPlayer && playerReady) {
+    try {
+      ytPlayer.loadVideoById(videoId)
+      if (playerStore.isPlaying) ytPlayer.playVideo()
+      return
+    } catch (error) {
+      console.warn('FloatingPlayer: 載入影片失敗，重建播放器', error)
+      disposePlayer()
+    }
+  }
+  ensurePlayer(videoId)
+})
+
+watch(() => playerStore.isPlaying, (isPlaying) => {
+  if (isUpdatingFromYouTube) return
+  if (!ytPlayer || !playerReady) return
+  try {
+    if (isPlaying) ytPlayer.playVideo()
+    else ytPlayer.pauseVideo()
+  } catch (error) {
+    console.warn('FloatingPlayer: 控制播放失敗', error)
   }
 })
 
-// 監聽靜音狀態變化
+watch(() => playerStore.volume, (value) => {
+  if (ytPlayer && playerReady) {
+    try { ytPlayer.setVolume(value) } catch { /* ignore */ }
+  }
+})
+
 watch(() => playerStore.isMuted, (muted) => {
   if (ytPlayer && playerReady) {
-    try {
-      if (muted) {
-        ytPlayer.mute()
-        console.log('FloatingPlayer: Player muted')
-      } else {
-        ytPlayer.unMute()
-        console.log('FloatingPlayer: Player unmuted')
-      }
-    } catch (error) {
-      console.error('FloatingPlayer: Error setting mute state:', error)
-    }
+    try { muted ? ytPlayer.mute() : ytPlayer.unMute() } catch { /* ignore */ }
   }
 })
 
-// 監聽最小化狀態
-watch(() => playerStore.isMinimized, async (minimized) => {
+watch(() => playerStore.isVisible, async (visible) => {
+  if (!visible) {
+    disposePlayer()
+    isFullscreen.value = false
+    return
+  }
   await nextTick()
+  ensurePlayer(resolveVideoId())
+})
 
-  const playerContainer = document.getElementById('floating-youtube-player')
-  const minimizedContainer = document.getElementById('floating-youtube-player-minimized')
+/* ---------------- lifecycle ---------------- */
 
-  if (minimized) {
-    // 縮小時：移動播放器到隱藏容器
-    if (playerContainer && minimizedContainer) {
-      const iframe = playerContainer.querySelector('iframe')
-      if (iframe) {
-        minimizedContainer.appendChild(iframe)
-        console.log('FloatingPlayer: Moved iframe to minimized container')
-      } else if (!ytPlayer && playerStore.currentVideo) {
-        // 如果沒有 iframe 且播放器不存在，需要初始化
-        console.log('FloatingPlayer: No player found, initializing in minimized mode')
-        const videoId = playerStore.currentVideo.video_id || extractVideoId(playerStore.currentVideo.youtube_url)
-        if (videoId) {
-          initPlayer(videoId)
-        }
-      }
-    }
+onMounted(async () => {
+  window.addEventListener('keydown', onKeydown)
+  if (playerStore.isVisible && playerStore.currentVideo) {
+    await nextTick()
+    ensurePlayer(resolveVideoId())
   } else {
-    // 展開時：移動播放器回到可見容器
-    if (playerContainer && minimizedContainer) {
-      const iframe = minimizedContainer.querySelector('iframe')
-      if (iframe) {
-        playerContainer.appendChild(iframe)
-        console.log('FloatingPlayer: Moved iframe to expanded container')
-      } else if (!ytPlayer && playerStore.currentVideo) {
-        // 如果沒有 iframe 且播放器不存在，需要初始化
-        console.log('FloatingPlayer: No player found, initializing in expanded mode')
-        const videoId = playerStore.currentVideo.video_id || extractVideoId(playerStore.currentVideo.youtube_url)
-        if (videoId) {
-          initPlayer(videoId)
-        }
-      }
-    }
+    loadYouTubeAPI().catch(() => {})
   }
-})
-
-// 監聽播放器可見狀態
-watch(() => playerStore.isVisible, (isVisible) => {
-  if (!isVisible && ytPlayer) {
-    // 當播放器關閉時，銷毀 YouTube 實例
-    console.log('FloatingPlayer: Destroying YouTube player instance')
-    disposePlayerInstance()
-  } else if (isVisible && !ytPlayer && playerStore.currentVideo) {
-    // 當播放器重新打開時，重新初始化（無論是否最小化）
-    console.log('FloatingPlayer: Reinitializing YouTube player, isMinimized:', playerStore.isMinimized)
-    const videoId = playerStore.currentVideo.video_id || extractVideoId(playerStore.currentVideo.youtube_url)
-    if (videoId) {
-      nextTick(() => initPlayer(videoId))
-    }
-  }
-})
-
-// 提取 video ID
-const extractVideoId = (url) => {
-  if (!url) return null
-  const match = url.match(/[?&]v=([^&]+)/)
-  return match ? match[1] : null
-}
-
-// 截斷標題
-const truncateTitle = (title, maxLength) => {
-  if (!title) return ''
-  return title.length > maxLength ? title.substring(0, maxLength) + '...' : title
-}
-
-// 處理音量變更
-const handleVolumeChange = (event) => {
-  const newVolume = parseInt(event.target.value)
-  playerStore.setVolume(newVolume)
-}
-
-onMounted(() => {
-  loadYouTubeAPI()
 })
 
 onUnmounted(() => {
-  disposePlayerInstance()
+  window.removeEventListener('keydown', onKeydown)
+  disposePlayer()
 })
 </script>
 
 <style scoped>
-.floating-player-container {
+/* ============================================================
+   FloatingPlayer — 暖陽奶油
+   影片舞台永遠留在同一個 DOM 節點，只用 CSS 改變尺寸，
+   所以在迷你／展開之間切換時 iframe 不會重新載入。
+   ============================================================ */
+
+.pl-player {
   position: fixed;
-  bottom: 20px;
   right: 20px;
+  bottom: 20px;
   z-index: 9999;
+  font-family: var(--font-family-base, 'Nunito', -apple-system, sans-serif);
+  color: var(--pl-ink-900, #3D332B);
 }
 
-/* Hidden player for minimized mode */
-.hidden-player {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
+.pl-shell {
+  display: grid;
+  background: var(--pl-surface, #FFFDF9);
+  border: 1px solid var(--pl-line, #EBDFCC);
+  box-shadow: 0 24px 56px rgba(122, 88, 56, 0.18);
   overflow: hidden;
 }
 
-.youtube-container-minimized {
-  width: 100%;
-  height: 100%;
+.icon {
+  width: 22px;
+  height: 22px;
+}
+.icon-sm {
+  width: 18px;
+  height: 18px;
+}
+.icon-xs {
+  width: 14px;
+  height: 14px;
 }
 
-.youtube-container {
+/* ---------------- 版面：展開 ---------------- */
+.pl-player.expanded .pl-shell {
+  width: min(940px, calc(100vw - 40px));
+  border-radius: 24px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head      window'
+    'stage     queue'
+    'transport queue';
+}
+
+/* ---------------- 版面：迷你 ---------------- */
+.pl-player.mini .pl-shell {
+  width: min(440px, calc(100vw - 24px));
+  border-radius: 18px;
+  padding: 8px 10px 8px 8px;
+  gap: 10px;
+  align-items: center;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: 'stage head transport window';
+}
+
+.pl-player.mini .pl-only-expanded {
+  display: none;
+}
+
+/* ---------------- 影片舞台 ---------------- */
+.pl-stage {
+  grid-area: stage;
+  position: relative;
+  overflow: hidden;
+  background: #17120E;
+}
+
+.pl-player.expanded .pl-stage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.pl-stage-inner {
   position: absolute;
+  inset: 0;
+}
+
+.pl-stage-inner :deep(iframe),
+.pl-stage-inner > div {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+
+/* 迷你模式把 256x144 的 iframe 等比縮進 68x38 的小框，
+   iframe 本身仍維持足夠尺寸，YouTube 才會正常播放 */
+.pl-player.mini .pl-stage {
+  width: 68px;
+  height: 38px;
+  border-radius: 10px;
+  cursor: pointer;
+  flex: none;
+}
+
+.pl-player.mini .pl-stage-inner {
+  inset: auto;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 256px;
+  height: 144px;
+  transform: scale(0.2656);
+  transform-origin: top left;
+  pointer-events: none;
 }
 
-.floating-player.minimized {
-  background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
-  width: 350px;
-}
-
-.minimized-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  gap: 12px;
-}
-
-.video-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
-}
-
-.thumbnail {
-  width: 60px;
-  height: 45px;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.info {
-  flex: 1;
-  min-width: 0;
-}
-
-.title {
-  font-size: 13px;
-  font-weight: 500;
-  color: #212121;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.status {
-  font-size: 11px;
-  color: #757575;
-  margin-top: 2px;
-}
-
-.controls {
-  display: flex;
-  gap: var(--space-1);
-  flex-shrink: 0;
-}
-
-.btn-control {
+.pl-stage-veil {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  min-width: var(--touch-target-min);
-  min-height: var(--touch-target-min);
-  padding: var(--space-2);
-  border-radius: var(--radius-full);
-  transition: all var(--transition-fast);
-  color: var(--text-secondary);
+  color: #fff;
+  background: rgba(23, 18, 14, 0.42);
+  opacity: 0;
+  transition: opacity var(--transition-fast, 160ms) ease;
 }
 
-.btn-control:hover {
-  background: var(--color-neutral-100);
-  color: var(--text-primary);
+.pl-stage:hover .pl-stage-veil {
+  opacity: 1;
 }
 
-.btn-control:active {
-  transform: scale(0.95);
+/* ---------------- 標題 ---------------- */
+.pl-head {
+  grid-area: head;
+  min-width: 0;
 }
 
-.btn-control .icon {
-  width: var(--icon-md);
-  height: var(--icon-md);
+.pl-player.expanded .pl-head {
+  padding: 18px 8px 12px 22px;
 }
 
-.btn-play {
-  background: var(--color-info);
-  color: white;
-}
-
-.btn-play:hover {
-  background: var(--color-info-dark);
-  color: white;
-}
-
-.btn-close {
-  color: var(--color-error);
-}
-
-.btn-close:hover {
-  background: var(--color-error-alpha);
-  color: var(--color-error-dark);
-}
-
-.floating-player.expanded {
-  width: 320px;
-  max-width: calc(100vw - 40px);
-  background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-}
-
-/* 滿版樣式 */
-.floating-player.expanded.fullscreen {
-  position: fixed;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100vw !important;
-  max-width: 100vw !important;
-  height: 100vh !important;
-  border-radius: 0;
-  z-index: 10000;
-}
-
-.floating-player.expanded.fullscreen .player-body {
-  padding-bottom: 0;
-  height: calc(100vh - 50px - 60px); /* 減去 header 和 controls 的高度 */
-}
-
-.floating-player.expanded.fullscreen .player-body .youtube-container {
-  position: static;
-  height: 100%;
-}
-
-.player-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.player-header h3 {
+.pl-title {
   margin: 0;
-  font-size: 13px;
-  font-weight: 500;
-  color: #212121;
-  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--pl-ink-900, #3D332B);
+}
+
+.pl-player.expanded .pl-title {
+  font-size: 17px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pl-player.mini .pl-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.header-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.btn-icon {
+.pl-sub {
+  margin: 5px 0 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: var(--space-2);
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
-  color: var(--text-secondary);
-}
-
-.btn-icon:hover {
-  background: var(--color-neutral-200);
-  color: var(--text-primary);
-}
-
-.btn-icon:active {
-  transform: scale(0.95);
-}
-
-.btn-icon .icon-sm {
-  width: var(--icon-sm);
-  height: var(--icon-sm);
-}
-
-.player-body {
-  position: relative;
-  height: 150px; /* 更矮的固定高度 */
-  background: #000;
-}
-
-.player-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 12px 16px;
-  background: #fafafa;
-}
-
-.playback-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.mode-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.player-controls .btn-control {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 40px;
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  color: var(--text-primary);
-}
-
-.player-controls .btn-control:hover {
-  background: var(--color-neutral-100);
-  border-color: var(--border-color-hover);
-}
-
-.player-controls .btn-control:active {
-  transform: scale(0.98);
-}
-
-.player-controls .btn-control .icon {
-  width: var(--icon-md);
-  height: var(--icon-md);
-}
-
-.player-controls .btn-control .icon-lg {
-  width: var(--icon-xl);
-  height: var(--icon-xl);
-}
-
-.player-controls .btn-play {
-  background: var(--color-info);
-  color: white;
-  border-color: var(--color-info);
-}
-
-.player-controls .btn-play:hover {
-  background: var(--color-info-dark);
-  border-color: var(--color-info-dark);
-}
-
-.btn-mode {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  color: var(--text-secondary);
-}
-
-.btn-mode:hover {
-  background: var(--color-neutral-100);
-  border-color: var(--border-color-hover);
-  color: var(--text-primary);
-}
-
-.btn-mode:active {
-  transform: scale(0.98);
-}
-
-.btn-mode .icon {
-  width: var(--icon-md);
-  height: var(--icon-md);
-}
-
-.btn-mode.active {
-  background: var(--color-success);
-  color: white;
-  border-color: var(--color-success);
-  box-shadow: 0 0 0 3px var(--color-success-alpha);
-}
-
-.btn-mode.active:hover {
-  background: var(--color-success-dark);
-  border-color: var(--color-success-dark);
-}
-
-.btn-mode-mini {
-  background: white;
-  border: 1px solid var(--border-color);
-}
-
-.btn-mode-mini.active {
-  background: var(--color-success);
-  color: white;
-  border-color: var(--color-success);
-}
-
-.track-info {
-  margin-left: auto;
+  gap: 6px;
   font-size: 12px;
-  color: #757575;
-  text-align: center;
+  color: var(--pl-ink-300, #AC9B88);
 }
 
-/* 音量控制區域 - 滿版寬度 */
-.volume-control-section {
+.pl-sub:empty {
+  display: none;
+}
+
+.pl-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.pl-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(224, 141, 90, 0.14);
+  color: var(--pl-amber-700, #A85C31);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ---------------- 視窗操作 ---------------- */
+.pl-window {
+  grid-area: window;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: #f5f5f5;
-  border-top: 1px solid #e0e0e0;
-  border-bottom: 1px solid #e0e0e0;
+  gap: 2px;
 }
 
-.btn-volume {
-  display: flex;
+.pl-player.expanded .pl-window {
+  align-self: start;
+  padding: 16px 16px 0 0;
+}
+
+/* ---------------- 按鈕 ---------------- */
+.pl-iconbtn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: var(--radius-sm);
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pl-ink-500, #877565);
   cursor: pointer;
-  color: var(--text-secondary);
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-.btn-volume:hover {
-  background: var(--color-neutral-100);
-  color: var(--text-primary);
-  border-color: var(--border-color-hover);
+.pl-iconbtn:hover:not(:disabled) {
+  background: var(--pl-cream-300, #F0E4D2);
+  color: var(--pl-ink-900, #3D332B);
 }
 
-.btn-volume.muted {
-  color: var(--color-error);
-  border-color: var(--color-error-alpha);
-  background: #fff5f5;
+.pl-iconbtn:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
-.btn-volume .icon {
-  width: 20px;
-  height: 20px;
+.pl-iconbtn:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
 }
 
-.volume-slider {
-  -webkit-appearance: none;
-  appearance: none;
+.pl-iconbtn.on {
+  background: rgba(224, 141, 90, 0.16);
+  color: var(--pl-amber-700, #A85C31);
+}
+
+.pl-iconbtn.muted {
+  color: var(--pl-terracotta, #D4634F);
+}
+
+.pl-close:hover {
+  background: rgba(212, 99, 79, 0.14);
+  color: var(--pl-terracotta, #D4634F);
+}
+
+.pl-player.mini .pl-iconbtn {
+  width: 32px;
+  height: 32px;
+}
+
+.pl-playbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: none;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--pl-accent-gradient, linear-gradient(135deg, #EDA97B, #E08D5A));
+  box-shadow: 0 6px 16px rgba(201, 116, 66, 0.32);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.pl-playbtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(201, 116, 66, 0.38);
+}
+
+.pl-playbtn:active {
+  transform: scale(0.95);
+}
+
+.pl-player.mini .pl-playbtn {
+  width: 38px;
+  height: 38px;
+}
+
+.pl-player.mini .pl-playbtn .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------------- 進度 + 控制列 ---------------- */
+.pl-transport {
+  grid-area: transport;
+}
+
+.pl-player.expanded .pl-transport {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 22px 20px;
+}
+
+.pl-player.mini .pl-transport {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pl-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pl-time {
+  min-width: 42px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--pl-ink-300, #AC9B88);
+}
+
+.pl-time:last-child {
+  text-align: right;
+}
+
+.pl-track {
+  position: relative;
   flex: 1;
   height: 6px;
-  background: linear-gradient(to right,
-    var(--color-info) 0%,
-    var(--color-info) var(--volume-percentage, 50%),
-    #ddd var(--volume-percentage, 50%),
-    #ddd 100%);
-  outline: none;
-  transition: all 0.2s;
-  border-radius: 3px;
+  border-radius: 999px;
+  background: var(--pl-cream-300, #F0E4D2);
+}
+
+.pl-track-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  background: var(--pl-accent-gradient, linear-gradient(135deg, #EDA97B, #E08D5A));
+  pointer-events: none;
+}
+
+.pl-track-fill::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--pl-amber-500, #E08D5A);
+  transform: translateY(-50%) scale(0);
+  transition: transform 160ms ease;
+}
+
+.pl-track:hover .pl-track-fill::after,
+.pl-track:focus-within .pl-track-fill::after {
+  transform: translateY(-50%) scale(1);
+}
+
+/* 透明的 range 疊在視覺軌道上負責互動 */
+.pl-track .pl-range {
+  position: absolute;
+  top: -9px;
+  left: 0;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
   cursor: pointer;
+  background: none;
+  border: none;
 }
 
-.volume-slider:hover {
-  transform: scaleY(1.1);
+.pl-track .pl-range:disabled {
+  cursor: default;
 }
 
-.volume-slider::-webkit-slider-thumb {
+.pl-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pl-modes,
+.pl-volume {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.pl-volume {
+  justify-content: flex-end;
+}
+
+.pl-playback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pl-volume-range {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--color-info);
+  width: 92px;
+  height: 6px;
+  border-radius: 999px;
   cursor: pointer;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s;
+  background: linear-gradient(
+    to right,
+    var(--pl-amber-500, #E08D5A) var(--pct, 100%),
+    var(--pl-cream-300, #F0E4D2) var(--pct, 100%)
+  );
 }
 
-.volume-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  background: var(--color-info-dark);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+.pl-volume-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--pl-amber-500, #E08D5A);
+  box-shadow: 0 1px 3px rgba(122, 88, 56, 0.3);
 }
 
-.volume-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  background: var(--color-info);
-  cursor: pointer;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s;
+.pl-volume-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--pl-amber-500, #E08D5A);
 }
 
-.volume-slider::-moz-range-thumb:hover {
-  transform: scale(1.2);
-  background: var(--color-info-dark);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+/* ---------------- 迷你模式的細進度線 ---------------- */
+.pl-miniprogress {
+  display: none;
 }
 
-.volume-value {
+.pl-player.mini .pl-miniprogress {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--pl-cream-300, #F0E4D2);
+  overflow: hidden;
+  z-index: 2;
+}
+
+.pl-player.mini .pl-miniprogress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--pl-accent-gradient, linear-gradient(135deg, #EDA97B, #E08D5A));
+  transition: width 240ms linear;
+}
+
+/* ---------------- 待播清單 ---------------- */
+.pl-queue {
+  grid-area: queue;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--pl-line, #EBDFCC);
+  background: var(--pl-cream-100, #FDF8F0);
+  min-height: 0;
+}
+
+.pl-player:not(.queue-open) .pl-queue {
+  display: none;
+}
+
+.pl-queue-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 18px 10px;
   font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  width: 45px;
-  text-align: right;
-  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--pl-ink-700, #5C4F44);
 }
 
-/* ===== V2 深色主題 ===== */
-[data-theme="v2"] .floating-player.minimized {
-  background: var(--v2-card-bg, #13131A);
-  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+.pl-queue-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pl-ink-300, #AC9B88);
 }
 
-[data-theme="v2"] .title {
-  color: var(--text-primary);
+.pl-queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 10px 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
-[data-theme="v2"] .status {
-  color: var(--text-tertiary);
+.pl-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--pl-ink-700, #5C4F44);
+  font-family: inherit;
+  transition: background 160ms ease, color 160ms ease;
 }
 
-[data-theme="v2"] .btn-control {
-  color: var(--text-secondary);
+.pl-queue-item:hover {
+  background: var(--pl-cream-300, #F0E4D2);
+  color: var(--pl-ink-900, #3D332B);
 }
 
-[data-theme="v2"] .btn-control:hover {
-  background: rgba(255,255,255,0.08);
-  color: var(--text-primary);
+.pl-queue-item.current {
+  background: rgba(224, 141, 90, 0.14);
+  color: var(--pl-amber-700, #A85C31);
 }
 
-[data-theme="v2"] .btn-mode-mini {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(255,255,255,0.1);
+.pl-queue-index {
+  flex: none;
+  width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--pl-ink-300, #AC9B88);
 }
 
-[data-theme="v2"] .floating-player.expanded {
-  background: var(--bg-secondary);
-  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
-  box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+.pl-queue-item.current .pl-queue-index {
+  color: var(--pl-amber-600, #C97442);
 }
 
-[data-theme="v2"] .player-header {
-  background: var(--bg-tertiary);
-  border-bottom-color: var(--border-color);
+.pl-queue-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-[data-theme="v2"] .player-header h3 {
-  color: var(--text-primary);
+.pl-queue-time {
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--pl-ink-300, #AC9B88);
 }
 
-[data-theme="v2"] .btn-icon:hover {
-  background: rgba(255,255,255,0.08);
-  color: var(--text-primary);
+/* ---------------- 滿版 ---------------- */
+.pl-player.fullscreen {
+  inset: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(61, 51, 43, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-[data-theme="v2"] .player-controls {
-  background: var(--bg-tertiary);
+.pl-player.fullscreen .pl-shell {
+  width: min(1440px, 100%);
+  max-height: calc(100vh - 48px);
 }
 
-[data-theme="v2"] .player-controls .btn-control {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(255,255,255,0.1);
-  color: var(--text-primary);
+.pl-player.fullscreen .pl-queue-list {
+  max-height: none;
 }
 
-[data-theme="v2"] .player-controls .btn-control:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.15);
+/* ---------------- 進場動畫 ---------------- */
+.pl-pop-enter-active,
+.pl-pop-leave-active {
+  transition: opacity 240ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 240ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-[data-theme="v2"] .player-controls .btn-play {
-  background: var(--color-brand-primary);
-  border-color: var(--color-brand-primary);
-  box-shadow: var(--v2-glow-red);
+.pl-pop-enter-from,
+.pl-pop-leave-to {
+  opacity: 0;
+  transform: translateY(16px) scale(0.98);
 }
 
-[data-theme="v2"] .player-controls .btn-play:hover {
-  background: var(--color-brand-primary-dark);
-  border-color: var(--color-brand-primary-dark);
-}
-
-[data-theme="v2"] .btn-mode {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(255,255,255,0.1);
-  color: var(--text-secondary);
-}
-
-[data-theme="v2"] .btn-mode:hover {
-  background: rgba(255,255,255,0.1);
-  color: var(--text-primary);
-}
-
-[data-theme="v2"] .track-info {
-  color: var(--text-tertiary);
-}
-
-[data-theme="v2"] .volume-control-section {
-  background: var(--bg-tertiary);
-  border-top-color: var(--border-color);
-  border-bottom-color: var(--border-color);
-}
-
-[data-theme="v2"] .btn-volume {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(255,255,255,0.1);
-  color: var(--text-secondary);
-}
-
-[data-theme="v2"] .btn-volume:hover {
-  background: rgba(255,255,255,0.1);
-  color: var(--text-primary);
-}
-
-[data-theme="v2"] .volume-slider {
-  background: linear-gradient(to right,
-    var(--color-brand-primary) 0%,
-    var(--color-brand-primary) var(--volume-percentage, 50%),
-    rgba(255,255,255,0.15) var(--volume-percentage, 50%),
-    rgba(255,255,255,0.15) 100%);
-}
-
-[data-theme="v2"] .volume-slider::-webkit-slider-thumb {
-  background: var(--color-brand-primary);
-}
-
-[data-theme="v2"] .volume-slider::-webkit-slider-thumb:hover {
-  background: var(--color-brand-primary-dark);
-}
-
-[data-theme="v2"] .volume-slider::-moz-range-thumb {
-  background: var(--color-brand-primary);
-}
-
-[data-theme="v2"] .volume-value {
-  color: var(--text-secondary);
-}
-
-/* 響應式 */
-@media (max-width: 768px) {
-  .floating-player-container {
-    bottom: 10px;
+/* ---------------- 響應式 ---------------- */
+@media (max-width: 760px) {
+  .pl-player {
     right: 10px;
+    bottom: 10px;
   }
 
-  .floating-player.minimized {
-    width: 300px;
+  .pl-player.expanded {
+    left: 10px;
   }
 
-  .floating-player.expanded {
-    width: calc(100vw - 20px);
+  .pl-player.expanded .pl-shell {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'head      window'
+      'stage     stage'
+      'transport transport'
+      'queue     queue';
   }
 
-  .volume-control-section {
-    padding: 10px 12px;
+  .pl-queue {
+    width: auto;
+    border-left: none;
+    border-top: 1px solid var(--pl-line, #EBDFCC);
+    max-height: 200px;
   }
 
-  .volume-slider {
-    height: 5px;
+  .pl-player.expanded .pl-head {
+    padding: 14px 8px 10px 16px;
   }
 
-  .thumbnail {
-    width: 50px;
-    height: 38px;
+  .pl-player.expanded .pl-window {
+    padding: 12px 12px 0 0;
   }
 
-  .title {
-    font-size: 12px;
+  .pl-player.expanded .pl-transport {
+    padding: 12px 16px 16px;
   }
 
-  .btn-control {
-    font-size: 16px;
-    padding: 4px 6px;
+  .pl-modes,
+  .pl-volume {
+    flex: 0 0 auto;
+  }
+
+  .pl-volume-range {
+    width: 64px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pl-volume-range {
+    display: none;
   }
 }
 </style>

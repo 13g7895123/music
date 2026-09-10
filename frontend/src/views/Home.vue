@@ -1,11 +1,10 @@
 <template>
-  <div id="app" :class="['container', { 'container-v2': isV2 }]">
+  <div class="container">
 
     <!-- ===== A: 音頻可視化粒子背景（全局 fixed） ===== -->
     <AudioVisualizer
-      :key="'av-' + (isV3 ? 'v3' : 'v12')"
       :is-playing="player.isPlaying.value"
-      :palette="visualizerPalette"
+      :palette="VISUALIZER_PALETTE"
     />
 
     <!-- ===== B: Hero 3D 場景（首頁未播放時） ===== -->
@@ -13,12 +12,10 @@
       <section
         v-if="!hasVideo && !isLoading"
         class="hero-section"
-        :class="{ 'hero-section--dark': isV2 }"
       >
         <HeroScene
-          :key="'hero-' + (isV3 ? 'v3' : 'v12')"
           :visible="true"
-          :palette="heroPalette"
+          :palette="HERO_PALETTE"
         />
         <div class="hero-content">
           <h1 class="hero-title">
@@ -45,11 +42,11 @@
     <!-- ===== 播放中介面 ===== -->
     <Transition name="player-slide">
       <div v-if="hasVideo || isLoading" class="player-section">
-        <header :class="['app-header', { 'app-header-v2': isV2 }]">
+        <header class="app-header">
           <div class="header-content">
             <div class="header-text">
-              <h1 :class="['app-title', { 'app-title-v2': isV2 }]">YouTube Loop Player</h1>
-              <p :class="['app-subtitle', { 'app-subtitle-v2': isV2 }]">貼上 YouTube 網址，自動循環播放</p>
+              <h1 class="app-title">YouTube Loop Player</h1>
+              <p class="app-subtitle">貼上 YouTube 網址，自動循環播放</p>
             </div>
           </div>
         </header>
@@ -156,7 +153,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import UrlInput from '../components/UrlInput.vue'
 import VideoPlayer from '../components/VideoPlayer.vue'
@@ -175,10 +172,8 @@ import { useGuestHistory } from '../composables/useGuestHistory'
 import { useAuthStore } from '../stores/auth'
 
 // 主題
-const { isV2, isV3 } = inject('theme', { isV2: ref(false), isV3: ref(false) })
-
-// v3「暖陽奶油」的 3D 場景配色：奶油底不適合霓虹紅，改用暖橘／蜜黃／鼠尾草綠
-const V3_HERO_PALETTE = {
+// 3D 場景配色：暖橘／蜜黃／鼠尾草綠，配合奶油底
+const HERO_PALETTE = {
   particleA: '#E08D5A',
   particleB: '#8FBF9F',
   particleC: '#E7C36A',
@@ -190,14 +185,11 @@ const V3_HERO_PALETTE = {
   light: '#F0B27F'
 }
 
-const V3_VISUALIZER_PALETTE = {
+const VISUALIZER_PALETTE = {
   particles: ['#E08D5A', '#EDBF8E', '#A8CDB4', '#E7C36A', '#FFFBF4'],
   waves: ['#E08D5A', '#EDA97B', '#A8CDB4', '#E7C36A', '#C99B6A'],
   rings: ['#E08D5A', '#A8CDB4', '#E7C36A']
 }
-
-const heroPalette = computed(() => (isV3.value ? V3_HERO_PALETTE : undefined))
-const visualizerPalette = computed(() => (isV3.value ? V3_VISUALIZER_PALETTE : undefined))
 
 // 路由
 const route = useRoute()
@@ -669,13 +661,9 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: linear-gradient(160deg, #0f0f1a 0%, #090912 60%, #0a0006 100%);
+  background: linear-gradient(168deg, #FFF6E9 0%, #FDF3E4 45%, #F6EFE6 100%);
   /* 補 navbar 高度，讓內容視覺置中 */
   padding-top: 60px;
-}
-
-.hero-section--dark {
-  background: linear-gradient(160deg, #070710 0%, #05050d 60%, #060005 100%);
 }
 
 /* Hero 文字內容 */
@@ -701,23 +689,23 @@ onMounted(async () => {
 }
 
 .hero-title-line {
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--ink-900);
   display: block;
 }
 
 .hero-title-accent {
-  background: linear-gradient(135deg, #FF3B3B 0%, #FF6B6B 40%, #a855f7 100%);
+  background: var(--accent-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 30px rgba(255, 59, 59, 0.5));
+  filter: drop-shadow(0 6px 18px rgba(224, 141, 90, 0.28));
 }
 
 .hero-subtitle {
   margin: 0 0 2.5rem;
   font-size: clamp(1rem, 2.5vw, 1.25rem);
-  color: rgba(255, 255, 255, 0.45);
-  font-weight: 400;
+  color: var(--ink-500);
+  font-weight: 500;
   letter-spacing: 0.01em;
 }
 
@@ -731,38 +719,43 @@ onMounted(async () => {
   max-width: 100%;
 }
 
+.hero-url-input :deep(.input-group) {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  padding: 6px 6px 6px 8px;
+  box-shadow: var(--shadow-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.hero-url-input :deep(.input-group:focus-within) {
+  border-color: var(--amber-400);
+  box-shadow: var(--shadow-lg), var(--ring);
+}
+
 .hero-url-input :deep(.url-input) {
-  background: rgba(255, 255, 255, 0.07) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #F1F5F9 !important;
-  backdrop-filter: blur(12px);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--ink-900);
   font-size: 1rem;
-  height: 52px;
-  border-radius: 14px;
+  height: 48px;
+  padding-left: var(--space-4);
 }
 
 .hero-url-input :deep(.url-input::placeholder) {
-  color: rgba(255, 255, 255, 0.3) !important;
+  color: var(--ink-300);
 }
 
 .hero-url-input :deep(.url-input:focus) {
-  border-color: rgba(255, 59, 59, 0.5) !important;
-  box-shadow: 0 0 0 3px rgba(255, 59, 59, 0.15), 0 0 20px rgba(255, 59, 59, 0.1) !important;
+  border: none;
+  box-shadow: none;
 }
 
 .hero-url-input :deep(.btn-primary) {
-  background: linear-gradient(135deg, #FF3B3B, #cc1f1f) !important;
-  border: none !important;
-  height: 52px;
+  height: 48px;
   padding: 0 1.5rem;
-  border-radius: 14px;
-  box-shadow: 0 4px 20px rgba(255, 59, 59, 0.4);
-  font-weight: 600;
-}
-
-.hero-url-input :deep(.btn-primary:hover:not(:disabled)) {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 30px rgba(255, 59, 59, 0.5) !important;
+  border-radius: var(--radius-full);
 }
 
 /* 功能標籤 */
@@ -775,13 +768,15 @@ onMounted(async () => {
 
 .badge {
   padding: 0.35rem 0.875rem;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.82);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
   font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  color: var(--ink-700);
   letter-spacing: 0.02em;
   backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-xs);
 }
 
 /* ===== Hero 過渡動畫 ===== */
@@ -843,8 +838,7 @@ onMounted(async () => {
   margin: 0 0 0.5rem 0;
   font-size: 2.5rem;
   font-weight: 700;
-  color: #212121;
-  background: linear-gradient(135deg, #ff0000, #cc0000);
+  background: var(--accent-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -853,8 +847,8 @@ onMounted(async () => {
 .app-subtitle {
   margin: 0;
   font-size: 1.125rem;
-  color: #616161;
-  font-weight: 400;
+  color: var(--ink-500);
+  font-weight: 500;
 }
 
 /* Main */
@@ -881,10 +875,10 @@ onMounted(async () => {
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  background-color: #e3f2fd;
-  border: 1px solid #90caf9;
+  background-color: rgba(107, 148, 184, 0.12);
+  border: 1px solid rgba(107, 148, 184, 0.32);
   border-radius: var(--radius-lg);
-  color: #1976d2;
+  color: #4A6D8C;
   animation: slideDown 0.3s ease-out;
 }
 
@@ -961,14 +955,14 @@ onMounted(async () => {
   margin: 0 0 1rem 0;
   font-size: 1.75rem;
   font-weight: 600;
-  color: #212121;
+  color: var(--ink-900);
 }
 
 .welcome-text {
   margin: 0;
   font-size: 1.125rem;
   line-height: 1.6;
-  color: #616161;
+  color: var(--ink-500);
   max-width: 600px;
   margin: 0 auto;
 }
@@ -978,13 +972,13 @@ onMounted(async () => {
   margin-top: 3rem;
   padding: 2rem 1rem;
   text-align: center;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--line);
 }
 
 .footer-text {
   margin: 0;
   font-size: 0.875rem;
-  color: #9e9e9e;
+  color: var(--ink-300);
 }
 
 /* 響應式設計 */
@@ -1056,67 +1050,6 @@ onMounted(async () => {
   }
 }
 
-/* ===== V2 深色主題覆蓋 ===== */
-.container-v2 {
-  background: var(--bg-primary);
-}
-
-.app-header-v2 {
-  padding: 2rem 1rem 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.app-title-v2 {
-  background: linear-gradient(135deg, #FF3B3B 0%, #FF6B6B 50%, #FF9999 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: none;
-}
-
-.app-subtitle-v2 {
-  color: var(--text-secondary);
-}
-
-.container-v2 .auth-required-message {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
-  color: #60A5FA;
-}
-
-.container-v2 .session-expired-message {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: #FCD34D;
-}
-
-.container-v2 .welcome-message {
-  background: var(--v2-card-bg, #13131A);
-  border: 1px solid var(--v2-card-border, rgba(255, 255, 255, 0.06));
-  box-shadow: var(--shadow-lg);
-}
-
-.container-v2 .welcome-icon {
-  color: #FF3B3B;
-  filter: drop-shadow(0 0 12px rgba(255, 59, 59, 0.4));
-}
-
-.container-v2 .welcome-title {
-  color: var(--text-primary);
-}
-
-.container-v2 .welcome-text {
-  color: var(--text-secondary);
-}
-
-.container-v2 .app-footer {
-  border-top-color: var(--border-color);
-}
-
-.container-v2 .footer-text {
-  color: var(--text-tertiary);
-}
-
 /* DEBUG Panel Styles */
 .debug-panel {
   position: fixed;
@@ -1124,7 +1057,7 @@ onMounted(async () => {
   right: 20px;
   width: 500px;
   max-height: 80vh;
-  background: white;
+  background: var(--surface);
   border: 2px solid #ff6b6b;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1176,7 +1109,7 @@ onMounted(async () => {
 .debug-section {
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--line);
 }
 
 .debug-section:last-child {
@@ -1187,7 +1120,7 @@ onMounted(async () => {
   margin: 0 0 12px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--ink-900);
 }
 
 .debug-item {
@@ -1199,13 +1132,13 @@ onMounted(async () => {
 
 .debug-label {
   font-weight: 600;
-  color: #666;
+  color: var(--ink-500);
   margin-right: 8px;
   min-width: 120px;
 }
 
 .debug-value {
-  color: #333;
+  color: var(--ink-900);
   word-break: break-all;
 }
 
@@ -1222,7 +1155,7 @@ onMounted(async () => {
 .debug-value.cookie {
   font-family: monospace;
   font-size: 11px;
-  background: #f5f5f5;
+  background: var(--cream-200);
   padding: 4px;
   border-radius: 3px;
 }
@@ -1230,8 +1163,8 @@ onMounted(async () => {
 .debug-log-container {
   max-height: 200px;
   overflow-y: auto;
-  background: #f9f9f9;
-  border: 1px solid #e0e0e0;
+  background: var(--cream-200);
+  border: 1px solid var(--line);
   border-radius: 4px;
   padding: 8px;
 }
@@ -1239,7 +1172,7 @@ onMounted(async () => {
 .debug-log {
   margin-bottom: 8px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--line);
   font-size: 12px;
 }
 
@@ -1266,8 +1199,8 @@ onMounted(async () => {
 }
 
 .debug-type.info {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: rgba(224, 141, 90, 0.10);
+  color: var(--amber-600);
 }
 
 .debug-type.success {
@@ -1286,14 +1219,14 @@ onMounted(async () => {
 }
 
 .debug-message {
-  color: #333;
+  color: var(--ink-900);
 }
 
 .debug-data {
   margin-top: 4px;
   padding: 8px;
   background: #fff;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--line);
   border-radius: 3px;
   font-size: 11px;
   font-family: monospace;
@@ -1318,7 +1251,7 @@ onMounted(async () => {
 }
 
 .debug-btn:hover {
-  background: #1976d2;
+  background: var(--amber-600);
 }
 
 .debug-btn:active {

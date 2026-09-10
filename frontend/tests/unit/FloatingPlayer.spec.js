@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { nextTick } from 'vue'
-import FloatingPlayerV3 from '@/components/FloatingPlayerV3.vue'
+import FloatingPlayer from '@/components/FloatingPlayer.vue'
 import { useGlobalPlayerStore } from '@/stores/globalPlayerStore'
 
 const makePlaylist = (n) => ({
@@ -38,7 +38,7 @@ const installFakeYT = () => {
   return instance
 }
 
-describe('FloatingPlayerV3', () => {
+describe('FloatingPlayer', () => {
   let store
   let wrapper
 
@@ -55,7 +55,7 @@ describe('FloatingPlayerV3', () => {
     vi.unstubAllGlobals()
   })
 
-  const mountPlayer = () => mount(FloatingPlayerV3, {
+  const mountPlayer = () => mount(FloatingPlayer, {
     attachTo: document.body,
     global: {
       directives: { tooltip: {} }
@@ -64,7 +64,7 @@ describe('FloatingPlayerV3', () => {
 
   it('播放器沒開的時候不算數渲染', () => {
     wrapper = mountPlayer()
-    expect(document.querySelector('.v3-player')).toBeNull()
+    expect(document.querySelector('.pl-player')).toBeNull()
   })
 
   it('開始播放清單後會渲染，而且待播清單列出每一首', async () => {
@@ -72,8 +72,8 @@ describe('FloatingPlayerV3', () => {
     wrapper = mountPlayer()
     await nextTick()
 
-    expect(document.querySelector('.v3-player')).not.toBeNull()
-    const items = document.querySelectorAll('.v3-queue-item')
+    expect(document.querySelector('.pl-player')).not.toBeNull()
+    const items = document.querySelectorAll('.pl-queue-item')
     expect(items.length).toBe(4)
     expect(items[0].classList.contains('current')).toBe(true)
     expect(items[0].textContent).toContain('歌 1')
@@ -85,7 +85,7 @@ describe('FloatingPlayerV3', () => {
     wrapper = mountPlayer()
     await nextTick()
 
-    const items = document.querySelectorAll('.v3-queue-item')
+    const items = document.querySelectorAll('.pl-queue-item')
     items[2].click()
     await nextTick()
 
@@ -99,12 +99,12 @@ describe('FloatingPlayerV3', () => {
     wrapper = mountPlayer()
     await nextTick()
 
-    const prev = document.querySelector('.v3-playback .v3-step')
+    const prev = document.querySelector('.pl-playback .pl-step')
     expect(prev.disabled).toBe(true)
 
     await store.next()
     await nextTick()
-    const prevAfter = document.querySelector('.v3-playback .v3-step')
+    const prevAfter = document.querySelector('.pl-playback .pl-step')
     expect(prevAfter.disabled).toBe(false)
   })
 
@@ -113,7 +113,7 @@ describe('FloatingPlayerV3', () => {
     wrapper = mountPlayer()
     await nextTick()
 
-    expect(document.querySelector('.v3-playback .v3-step').disabled).toBe(false)
+    expect(document.querySelector('.pl-playback .pl-step').disabled).toBe(false)
   })
 
   it('空白鍵切換播放／暫停，輸入框內則不攔截', async () => {
@@ -157,14 +157,14 @@ describe('FloatingPlayerV3', () => {
     wrapper = mountPlayer()
     await nextTick()
 
-    const stageBefore = document.getElementById('v3-yt-player')
+    const stageBefore = document.getElementById('pl-yt-player')
     expect(stageBefore).not.toBeNull()
 
     store.minimize()
     await nextTick()
-    expect(document.querySelector('.v3-player').classList.contains('mini')).toBe(true)
+    expect(document.querySelector('.pl-player').classList.contains('mini')).toBe(true)
 
-    const stageAfter = document.getElementById('v3-yt-player')
+    const stageAfter = document.getElementById('pl-yt-player')
     expect(stageAfter).toBe(stageBefore)
   })
 
@@ -172,10 +172,10 @@ describe('FloatingPlayerV3', () => {
     store.playPlaylist(makePlaylist(3), 0)
     wrapper = mountPlayer()
     await nextTick()
-    expect(document.querySelector('.v3-player')).not.toBeNull()
+    expect(document.querySelector('.pl-player')).not.toBeNull()
 
     store.close()
     await nextTick()
-    expect(document.querySelector('.v3-player')).toBeNull()
+    expect(document.querySelector('.pl-player')).toBeNull()
   })
 })

@@ -142,7 +142,7 @@ defineExpose({ show, success, error, warning, info, removeToast });
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-4);
-  background: white;
+  background: var(--surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   border-left: 4px solid;

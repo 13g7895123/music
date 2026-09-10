@@ -1,69 +1,96 @@
 /**
- * Design Tokens - 統一的設計系統變數
- * 用於維持視覺一致性和易於維護
+ * Design Tokens — 暖陽奶油 (Warm Cream)
+ * 全站唯一的設計系統來源，沒有主題切換。
  */
 
 :root {
-  /* ==================== 品牌色彩 ==================== */
-  --color-brand-primary: #FF0000;
-  --color-brand-primary-dark: #CC0000;
-  --color-brand-primary-light: #FF5252;
-  --color-brand-primary-alpha: rgba(255, 0, 0, 0.1);
+  /* ==================== 調色盤 ==================== */
+  --cream-50:  #FFFDF9;  /* 卡片、浮起表面 */
+  --cream-100: #FDF8F0;  /* 頁面底色 */
+  --cream-200: #F7EFE3;  /* 次級表面 */
+  --cream-300: #F0E4D2;  /* hover、三級表面 */
+  --cream-400: #E5D5BE;  /* 強邊框 */
+  --line:      #EBDFCC;  /* 一般邊框 */
 
-  /* ==================== 語義色彩 ==================== */
-  --color-success: #4CAF50;
-  --color-success-dark: #388E3C;
-  --color-success-light: #81C784;
-  --color-success-alpha: rgba(76, 175, 80, 0.1);
+  --ink-900: #3D332B;    /* 主文字 深咖 */
+  --ink-700: #5C4F44;
+  --ink-500: #877565;    /* 次文字 */
+  --ink-300: #AC9B88;    /* 三級文字 */
 
-  --color-warning: #FF9800;
-  --color-warning-dark: #F57C00;
-  --color-warning-light: #FFB74D;
-  --color-warning-alpha: rgba(255, 152, 0, 0.1);
+  --amber-300: #F7DCC2;
+  --amber-400: #EDA97B;
+  --amber-500: #E08D5A;  /* 主色 暖橘 */
+  --amber-600: #C97442;
+  --amber-700: #A85C31;
 
-  --color-error: #F44336;
-  --color-error-dark: #D32F2F;
-  --color-error-light: #E57373;
-  --color-error-alpha: rgba(244, 67, 54, 0.1);
+  --sage:       #6FA86B; /* 成功 */
+  --honey:      #DFA43A; /* 警告 */
+  --terracotta: #D4634F; /* 錯誤 */
+  --sky:        #6B94B8; /* 資訊 */
 
-  --color-info: #2196F3;
-  --color-info-dark: #1976D2;
-  --color-info-light: #64B5F6;
-  --color-info-alpha: rgba(33, 150, 243, 0.1);
+  --shadow-tint: 122, 88, 56;
 
-  /* ==================== 中性色彩 ==================== */
-  --color-neutral-900: #212121;
-  --color-neutral-800: #424242;
-  --color-neutral-700: #616161;
-  --color-neutral-600: #757575;
-  --color-neutral-500: #9E9E9E;
-  --color-neutral-400: #BDBDBD;
-  --color-neutral-300: #E0E0E0;
-  --color-neutral-200: #EEEEEE;
-  --color-neutral-100: #F5F5F5;
-  --color-neutral-50: #FAFAFA;
+  /* ==================== 品牌色 ==================== */
+  --color-brand-primary: var(--amber-500);
+  --color-brand-primary-dark: var(--amber-600);
+  --color-brand-primary-light: var(--amber-400);
+  --color-brand-primary-alpha: rgba(224, 141, 90, 0.16);
 
-  /* ==================== 背景色彩 ==================== */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F8F9FA;
-  --bg-tertiary: #F5F5F5;
-  --bg-overlay: rgba(0, 0, 0, 0.5);
-  --bg-overlay-light: rgba(0, 0, 0, 0.3);
-  --bg-overlay-dark: rgba(0, 0, 0, 0.7);
+  /* ==================== 語義色 ==================== */
+  --color-success: var(--sage);
+  --color-success-dark: #588A55;
+  --color-success-light: #93C48F;
+  --color-success-alpha: rgba(111, 168, 107, 0.14);
 
-  /* ==================== 文字色彩 ==================== */
-  --text-primary: #212121;
-  --text-secondary: #616161;
-  --text-tertiary: #9E9E9E;
-  --text-disabled: #BDBDBD;
-  --text-inverse: #FFFFFF;
+  --color-warning: var(--honey);
+  --color-warning-dark: #BE8722;
+  --color-warning-light: #EFC470;
+  --color-warning-alpha: rgba(223, 164, 58, 0.14);
 
-  /* ==================== 邊框色彩 ==================== */
-  --border-color: #6f6d6d;
-  --border-color-hover: #BDBDBD;
-  --border-color-focus: #2196F3;
+  --color-error: var(--terracotta);
+  --color-error-dark: #B24C3A;
+  --color-error-light: #E28B7B;
+  --color-error-alpha: rgba(212, 99, 79, 0.14);
 
-  /* ==================== 間距系統 (8px grid) ==================== */
+  --color-info: var(--sky);
+  --color-info-dark: #547B9C;
+  --color-info-light: #97B6D0;
+  --color-info-alpha: rgba(107, 148, 184, 0.14);
+
+  /* ==================== 中性色 ==================== */
+  --color-neutral-900: var(--ink-900);
+  --color-neutral-800: #4B3F35;
+  --color-neutral-700: var(--ink-700);
+  --color-neutral-600: #6E5F52;
+  --color-neutral-500: var(--ink-500);
+  --color-neutral-400: #9C8B79;
+  --color-neutral-300: var(--cream-400);
+  --color-neutral-200: var(--cream-300);
+  --color-neutral-100: var(--cream-200);
+  --color-neutral-50:  var(--cream-100);
+
+  /* ==================== 背景 ==================== */
+  --bg-primary: var(--cream-100);
+  --bg-secondary: var(--cream-200);
+  --bg-tertiary: var(--cream-300);
+  --surface: var(--cream-50);
+  --bg-overlay: rgba(61, 51, 43, 0.42);
+  --bg-overlay-light: rgba(61, 51, 43, 0.22);
+  --bg-overlay-dark: rgba(61, 51, 43, 0.62);
+
+  /* ==================== 文字 ==================== */
+  --text-primary: var(--ink-900);
+  --text-secondary: var(--ink-500);
+  --text-tertiary: var(--ink-300);
+  --text-disabled: #C3B5A2;
+  --text-inverse: #FFFDF9;
+
+  /* ==================== 邊框 ==================== */
+  --border-color: var(--line);
+  --border-color-hover: var(--cream-400);
+  --border-color-focus: var(--amber-500);
+
+  /* ==================== 間距 (8px grid) ==================== */
   --space-0: 0;
   --space-1: 4px;
   --space-2: 8px;
@@ -79,36 +106,43 @@
   --space-20: 80px;
   --space-24: 96px;
 
-  /* ==================== 圓角系統 ==================== */
+  /* ==================== 圓角 ==================== */
   --radius-none: 0;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
   --radius-full: 9999px;
 
-  /* ==================== 陰影系統 ==================== */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.25);
-  --shadow-2xl: 0 24px 64px rgba(0, 0, 0, 0.3);
+  /* ==================== 陰影（暖色調、柔散） ==================== */
+  --shadow-xs: 0 1px 2px rgba(var(--shadow-tint), 0.05);
+  --shadow-sm: 0 2px 6px rgba(var(--shadow-tint), 0.07);
+  --shadow-md: 0 6px 18px rgba(var(--shadow-tint), 0.10);
+  --shadow-lg: 0 14px 34px rgba(var(--shadow-tint), 0.13);
+  --shadow-xl: 0 24px 56px rgba(var(--shadow-tint), 0.16);
+  --shadow-2xl: 0 32px 72px rgba(var(--shadow-tint), 0.20);
 
-  /* ==================== 過渡動畫 ==================== */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slowest: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* ==================== 過渡 ==================== */
+  --transition-fast: 160ms cubic-bezier(0.32, 0.72, 0, 1);
+  --transition-base: 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  --transition-slow: 420ms cubic-bezier(0.32, 0.72, 0, 1);
+  --transition-slowest: 560ms cubic-bezier(0.32, 0.72, 0, 1);
 
-  /* ==================== 緩動函數 ==================== */
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-  /* ==================== Z-index 層級 ==================== */
+  /* ==================== 效果 ==================== */
+  --ring: 0 0 0 3px rgba(224, 141, 90, 0.18);
+  --accent-gradient: linear-gradient(135deg, #EDA97B 0%, #E08D5A 55%, #D97F4C 100%);
+  --accent-gradient-hover: linear-gradient(135deg, #E8A071 0%, #D97F4C 55%, #C97442 100%);
+  --page-glow:
+    radial-gradient(1100px 620px at 12% -10%, rgba(247, 220, 194, 0.55), transparent 62%),
+    radial-gradient(900px 520px at 92% 4%, rgba(214, 231, 222, 0.45), transparent 60%);
+
+  /* ==================== Z-index ==================== */
   --z-dropdown: 1000;
   --z-sticky: 1020;
   --z-fixed: 1030;
@@ -117,8 +151,10 @@
   --z-popover: 1060;
   --z-tooltip: 1070;
 
-  /* ==================== 字體系統 ==================== */
-  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  /* ==================== 字體 ==================== */
+  --font-family-base: 'Nunito', -apple-system, BlinkMacSystemFont, 'PingFang TC',
+    'Noto Sans TC', 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+  --font-family-display: var(--font-family-base);
   --font-family-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
   --font-size-xs: 12px;
@@ -140,7 +176,7 @@
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.75;
 
-  /* ==================== Icon 尺寸 ==================== */
+  /* ==================== Icon ==================== */
   --icon-xs: 12px;
   --icon-sm: 16px;
   --icon-md: 20px;
@@ -148,109 +184,17 @@
   --icon-xl: 32px;
   --icon-2xl: 40px;
 
-  /* ==================== 觸控目標尺寸 ==================== */
-  --touch-target-min: 44px; /* iOS HIG 建議 */
-  --touch-target-comfortable: 48px; /* Material Design 建議 */
+  /* ==================== 觸控目標 ==================== */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
 
-  /* ==================== 斷點系統 ==================== */
+  /* ==================== 斷點 ==================== */
   --breakpoint-xs: 480px;
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1536px;
-}
-
-/* ==================== V2 深色主題 (OLED Dark) ==================== */
-[data-theme="v2"] {
-  /* 品牌色彩 - YouTube 紅保留，搭配深色背景 */
-  --color-brand-primary: #FF3B3B;
-  --color-brand-primary-dark: #CC0000;
-  --color-brand-primary-light: #FF6B6B;
-  --color-brand-primary-alpha: rgba(255, 59, 59, 0.15);
-
-  /* 語義色彩 */
-  --color-success: #22C55E;
-  --color-success-dark: #16A34A;
-  --color-success-light: #4ADE80;
-  --color-success-alpha: rgba(34, 197, 94, 0.15);
-
-  --color-warning: #F59E0B;
-  --color-warning-dark: #D97706;
-  --color-warning-light: #FCD34D;
-  --color-warning-alpha: rgba(245, 158, 11, 0.15);
-
-  --color-error: #EF4444;
-  --color-error-dark: #DC2626;
-  --color-error-light: #F87171;
-  --color-error-alpha: rgba(239, 68, 68, 0.15);
-
-  --color-info: #3B82F6;
-  --color-info-dark: #2563EB;
-  --color-info-light: #60A5FA;
-  --color-info-alpha: rgba(59, 130, 246, 0.15);
-
-  /* 中性色彩 - 深色系 */
-  --color-neutral-900: #F8FAFC;
-  --color-neutral-800: #E2E8F0;
-  --color-neutral-700: #CBD5E1;
-  --color-neutral-600: #94A3B8;
-  --color-neutral-500: #64748B;
-  --color-neutral-400: #475569;
-  --color-neutral-300: #334155;
-  --color-neutral-200: #1E293B;
-  --color-neutral-100: #0F172A;
-  --color-neutral-50: #020617;
-
-  /* 背景色彩 - OLED */
-  --bg-primary: #0A0A0F;
-  --bg-secondary: #111118;
-  --bg-tertiary: #1A1A24;
-  --bg-overlay: rgba(0, 0, 0, 0.75);
-  --bg-overlay-light: rgba(0, 0, 0, 0.4);
-  --bg-overlay-dark: rgba(0, 0, 0, 0.9);
-
-  /* 文字色彩 */
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-tertiary: #64748B;
-  --text-disabled: #475569;
-  --text-inverse: #0A0A0F;
-
-  /* 邊框色彩 */
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-color-hover: rgba(255, 255, 255, 0.16);
-  --border-color-focus: #3B82F6;
-
-  /* 陰影系統 - 深色模式更鮮明 */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.8);
-  --shadow-2xl: 0 24px 64px rgba(0, 0, 0, 0.9);
-
-  /* V2 專屬 token */
-  --v2-card-bg: #13131A;
-  --v2-card-border: rgba(255, 255, 255, 0.06);
-  --v2-card-hover-bg: #1C1C26;
-  --v2-card-hover-border: rgba(255, 59, 59, 0.3);
-  --v2-input-bg: #0F0F18;
-  --v2-input-border: rgba(255, 255, 255, 0.1);
-  --v2-input-focus-glow: rgba(255, 59, 59, 0.2);
-  --v2-navbar-bg: rgba(10, 10, 15, 0.85);
-  --v2-navbar-border: rgba(255, 255, 255, 0.06);
-  --v2-glow-red: 0 0 20px rgba(255, 59, 59, 0.3);
-  --v2-glow-red-strong: 0 0 40px rgba(255, 59, 59, 0.5);
-  --v2-accent-gradient: linear-gradient(135deg, #FF3B3B 0%, #FF6B6B 100%);
-  --v2-surface-gradient: linear-gradient(180deg, #13131A 0%, #0A0A0F 100%);
-}
-
-/* ==================== 深色模式（預留） ==================== */
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* 未來可以在這裡定義深色模式的顏色 */
-  }
 }
 
 /* ==================== 減少動畫（無障礙） ==================== */

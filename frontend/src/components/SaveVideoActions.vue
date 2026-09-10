@@ -351,7 +351,7 @@ watch(showPlaylistModal, (newValue) => {
   left: 0;
   right: 0;
   min-width: 200px;
-  background: white;
+  background: var(--surface);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   padding: var(--space-2);
@@ -425,7 +425,7 @@ watch(showPlaylistModal, (newValue) => {
 }
 
 .modal {
-  background: white;
+  background: var(--surface);
   border-radius: var(--radius-xl);
   max-width: 500px;
   width: 100%;
@@ -537,7 +537,7 @@ watch(showPlaylistModal, (newValue) => {
   align-items: center;
   width: 100%;
   padding: var(--space-4);
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   cursor: pointer;

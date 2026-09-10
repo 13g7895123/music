@@ -128,7 +128,7 @@ function handleAvatarError(event) {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--cream-200) 25%, var(--line) 50%, var(--cream-200) 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
 }
@@ -148,7 +148,7 @@ function handleAvatarError(event) {
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 1rem;
-  background-color: #f5f5f5;
+  background-color: var(--cream-200);
   border-radius: var(--radius-full, 9999px);
   transition: background-color 0.2s ease;
 }
@@ -175,7 +175,7 @@ function handleAvatarError(event) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--amber-500) 0%, #764ba2 100%);
   color: #ffffff;
   font-weight: 600;
   font-size: 1.125rem;
@@ -186,7 +186,7 @@ function handleAvatarError(event) {
 .user-name {
   font-size: 0.9375rem;
   font-weight: 500;
-  color: #212121;
+  color: var(--ink-900);
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -234,9 +234,9 @@ function handleAvatarError(event) {
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
   font-size: 0.9375rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #ffffff;
-  background: linear-gradient(135deg, #00b900 0%, #00c300 100%);
+  background: linear-gradient(135deg, #3F9E6B 0%, #35895C 100%);
   border: none;
   border-radius: var(--radius-full, 9999px);
   cursor: pointer;
@@ -245,8 +245,8 @@ function handleAvatarError(event) {
 }
 
 .login-button:hover {
-  background: linear-gradient(135deg, #00c300 0%, #00d400 100%);
-  box-shadow: 0 4px 12px rgba(0, 185, 0, 0.4);
+  background: linear-gradient(135deg, #47AE77 0%, #3F9E6B 100%);
+  box-shadow: 0 6px 16px rgba(63, 158, 107, 0.32);
   transform: translateY(-1px);
 }
 
@@ -258,29 +258,6 @@ function handleAvatarError(event) {
 .line-icon {
   width: 20px;
   height: 20px;
-}
-
-/* ===== V2 深色主題 ===== */
-[data-theme="v2"] .user-info {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="v2"] .user-info:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="v2"] .user-name {
-  color: var(--text-primary);
-}
-
-[data-theme="v2"] .logout-button {
-  color: var(--text-secondary);
-}
-
-[data-theme="v2"] .logout-button:hover {
-  background: rgba(255, 59, 59, 0.15);
-  color: var(--color-brand-primary);
 }
 
 /* 響應式設計 */

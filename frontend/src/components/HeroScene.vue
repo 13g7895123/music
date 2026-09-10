@@ -110,11 +110,15 @@ function init() {
   const torusMat = new THREE.MeshStandardMaterial({
     color: props.palette.torus,
     emissive: props.palette.torusEmissive,
-    emissiveIntensity: 1.2,
-    metalness: 0.6,
-    roughness: 0.2,
+    emissiveIntensity: 0.5,
+    metalness: 0.35,
+    roughness: 0.45,
+    transparent: true,
+    opacity: 0.28,
   })
   torus = new THREE.Mesh(torusGeo, torusMat)
+  torus.position.set(17, -9.5, -6)
+  torus.scale.setScalar(2.2)
   scene.add(torus)
 
   // 內層小圓環（對比色）
@@ -122,12 +126,16 @@ function init() {
   const torusInnerMat = new THREE.MeshStandardMaterial({
     color: props.palette.torusInner,
     emissive: props.palette.torusInnerEmissive,
-    emissiveIntensity: 1.5,
-    metalness: 0.7,
-    roughness: 0.1,
+    emissiveIntensity: 0.6,
+    metalness: 0.4,
+    roughness: 0.4,
+    transparent: true,
+    opacity: 0.24,
   })
   torusInner = new THREE.Mesh(torusInnerGeo, torusInnerMat)
   torusInner.rotation.x = Math.PI / 2
+  torusInner.position.set(17, -9.5, -6)
+  torusInner.scale.setScalar(2.2)
   scene.add(torusInner)
 
   // 中心播放三角形
@@ -137,18 +145,19 @@ function init() {
   triShape.lineTo(-0.95, -0.55)
   triShape.closePath()
   const triGeo = new THREE.ShapeGeometry(triShape)
-  const triMat = new THREE.MeshBasicMaterial({ color: props.palette.triangle, side: THREE.DoubleSide, transparent: true, opacity: 0.92 })
+  const triMat = new THREE.MeshBasicMaterial({ color: props.palette.triangle, side: THREE.DoubleSide, transparent: true, opacity: 0.18 })
   const triangle = new THREE.Mesh(triGeo, triMat)
-  triangle.position.x = 0.15
+  triangle.position.set(17.3, -9.5, -6)
+  triangle.scale.setScalar(2.2)
   scene.add(triangle)
 
   // 光源
   const ambient = new THREE.AmbientLight(0xffffff, 0.3)
   scene.add(ambient)
   pointLight = new THREE.PointLight(props.palette.light, 4, 30)
-  pointLight.position.set(0, 0, 8)
+  pointLight.position.set(14, -7, 8)
   scene.add(pointLight)
-  const blueLight = new THREE.PointLight('#3B82F6', 3, 25)
+  const blueLight = new THREE.PointLight(props.palette.particleB, 2, 25)
   blueLight.position.set(10, -5, 5)
   scene.add(blueLight)
 
@@ -167,16 +176,16 @@ function animate() {
   const pulse = 1 + 0.06 * Math.sin(t * 1.8)
   torus.rotation.x = t * 0.3
   torus.rotation.y = t * 0.5
-  torus.scale.setScalar(pulse)
+  torus.scale.setScalar(2.2 * pulse)
 
   // 內環反向旋轉
   torusInner.rotation.z = t * -0.7
   torusInner.rotation.x = Math.PI / 2 + t * 0.2
 
   // 光源搖曳
-  pointLight.intensity = 3.5 + 1.5 * Math.sin(t * 2.3)
-  pointLight.position.x = Math.sin(t * 0.6) * 3
-  pointLight.position.y = Math.cos(t * 0.4) * 2
+  pointLight.intensity = 2.2 + 0.9 * Math.sin(t * 2.3)
+  pointLight.position.x = 14 + Math.sin(t * 0.6) * 3
+  pointLight.position.y = -7 + Math.cos(t * 0.4) * 2
 
   // 相機輕微漂移
   camera.position.x = Math.sin(t * 0.15) * 1.5

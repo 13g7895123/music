@@ -157,14 +157,14 @@ function handleImageError(event) {
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--line);
 }
 
 .history-title {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #212121;
+  color: var(--ink-900);
 }
 
 .clear-button {
@@ -199,7 +199,7 @@ function handleImageError(event) {
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
-  background-color: #f5f5f5;
+  background-color: var(--cream-200);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -264,7 +264,7 @@ function handleImageError(event) {
   margin: 0 0 0.25rem 0;
   font-size: 0.9375rem;
   font-weight: 500;
-  color: #212121;
+  color: var(--ink-900);
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -288,7 +288,7 @@ function handleImageError(event) {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  color: #9e9e9e;
+  color: var(--ink-300);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -307,55 +307,6 @@ function handleImageError(event) {
 .remove-button svg {
   width: 20px;
   height: 20px;
-}
-
-/* ===== V2 深色主題 ===== */
-[data-theme="v2"] .guest-history {
-  background: var(--v2-card-bg, #13131A);
-  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
-  box-shadow: none;
-}
-
-[data-theme="v2"] .history-header {
-  border-bottom-color: var(--border-color);
-}
-
-[data-theme="v2"] .history-title {
-  color: var(--text-primary);
-}
-
-[data-theme="v2"] .clear-button {
-  color: var(--color-brand-primary);
-  border-color: var(--color-brand-primary);
-}
-
-[data-theme="v2"] .clear-button:hover {
-  background: var(--color-brand-primary);
-  color: white;
-}
-
-[data-theme="v2"] .history-item {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-[data-theme="v2"] .history-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 59, 59, 0.2);
-  transform: translateX(4px);
-}
-
-[data-theme="v2"] .video-title {
-  color: var(--text-primary);
-}
-
-[data-theme="v2"] .played-time {
-  color: var(--text-tertiary);
-}
-
-[data-theme="v2"] .remove-button:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--color-error-light);
 }
 
 /* 響應式設計 */

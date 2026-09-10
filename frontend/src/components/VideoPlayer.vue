@@ -145,7 +145,7 @@ const statusText = computed(() => {
 .player-info {
   margin-top: 1rem;
   padding: 0.75rem 1rem;
-  background-color: #f5f5f5;
+  background-color: var(--cream-200);
   border-radius: var(--radius-md);
 }
 
@@ -176,7 +176,7 @@ const statusText = computed(() => {
 }
 
 .status-idle .status-dot {
-  background-color: #9e9e9e;
+  background-color: var(--ink-300);
   animation: none;
 }
 

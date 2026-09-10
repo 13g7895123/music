@@ -1,5 +1,5 @@
 <template>
-  <div :class="['playlist-detail', { 'playlist-detail-v2': isV2 }]">
+  <div class="playlist-detail">
     <div v-if="!loading" class="detail-container">
       <!-- Header -->
       <div class="detail-header">
@@ -115,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, inject } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePlaylistStore } from '@/stores/playlistStore'
 import { useVideoStore } from '@/stores/videoStore'
@@ -133,7 +133,6 @@ import {
   TrashIcon
 } from '@heroicons/vue/24/outline'
 
-const { isV2 } = inject('theme', { isV2: ref(false) })
 const route = useRoute()
 const playlistStore = usePlaylistStore()
 const videoStore = useVideoStore()
@@ -335,16 +334,18 @@ const formatDuration = (seconds) => {
   align-items: center;
   gap: var(--space-2);
   margin-bottom: var(--space-4);
-  padding: var(--space-2) var(--space-3);
-  color: var(--color-info);
+  padding: var(--space-2) var(--space-4);
+  color: var(--ink-500);
+  font-weight: 600;
   text-decoration: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   transition: all var(--transition-fast);
   font-weight: var(--font-weight-medium);
 }
 
 .back-button:hover {
-  background: var(--color-info-alpha);
+  background: var(--cream-300);
+  color: var(--ink-900);
   transform: translateX(-4px);
 }
 
@@ -354,7 +355,7 @@ const formatDuration = (seconds) => {
 }
 
 .detail-header {
-  background: white;
+  background: var(--surface);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   margin-bottom: var(--space-6);
@@ -402,31 +403,37 @@ const formatDuration = (seconds) => {
 }
 
 .player-section {
-  background: white;
+  background: var(--surface);
   border-radius: var(--radius-md);
   padding: 24px;
   margin-bottom: 24px;
 }
 
 .player-placeholder {
-  background: #333;
-  border-radius: var(--radius-sm);
+  background: var(--cream-200);
+  border: 1px dashed var(--cream-400);
+  border-radius: var(--radius-xl);
   padding: 60px 20px;
   text-align: center;
   margin-bottom: 20px;
 }
 
 .video-info {
-  color: white;
-  font-size: 16px;
+  color: var(--ink-500);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.player-placeholder .video-info {
+  color: var(--ink-500);
 }
 
 .status {
-  color: #fff;
+  color: var(--amber-700);
 }
 
 .videos-section {
-  background: white;
+  background: var(--surface);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   box-shadow: var(--shadow-sm);
@@ -475,19 +482,19 @@ const formatDuration = (seconds) => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .video-item:hover {
-  background: #f9f9f9;
+  background: var(--cream-200);
 }
 
 .video-item.is-current {
-  background: #e3f2fd;
-  border-color: #1976d2;
+  background: rgba(224, 141, 90, 0.10);
+  border-color: var(--amber-600);
 }
 
 .video-number {
@@ -496,7 +503,7 @@ const formatDuration = (seconds) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f0f0f0;
+  background: var(--cream-200);
   border-radius: var(--radius-sm);
   font-weight: 600;
 }
@@ -565,7 +572,9 @@ const formatDuration = (seconds) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(61, 51, 43, 0.34);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -573,7 +582,7 @@ const formatDuration = (seconds) => {
 }
 
 .modal {
-  background: white;
+  background: var(--surface);
   border-radius: var(--radius-xl);
   max-width: 500px;
   width: 90%;
@@ -674,73 +683,6 @@ const formatDuration = (seconds) => {
     gap: var(--space-2);
   }
 }
-
-/* ===== V2 深色主題 ===== */
-.playlist-detail-v2 {
-  background: var(--bg-primary);
-}
-
-.playlist-detail-v2 .detail-header {
-  background: var(--v2-card-bg, #13131A);
-  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
-  box-shadow: none;
-}
-
-.playlist-detail-v2 .header-content h1 {
-  color: var(--text-primary);
-}
-
-.playlist-detail-v2 .description {
-  color: var(--text-secondary);
-}
-
-.playlist-detail-v2 .back-button {
-  color: var(--color-brand-primary);
-}
-
-.playlist-detail-v2 .back-button:hover {
-  background: rgba(255, 59, 59, 0.1);
-}
-
-.playlist-detail-v2 .player-section {
-  background: var(--v2-card-bg, #13131A);
-  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
-}
-
-.playlist-detail-v2 .videos-section {
-  background: var(--v2-card-bg, #13131A);
-  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
-  box-shadow: none;
-}
-
-.playlist-detail-v2 .videos-section h2 {
-  color: var(--text-primary);
-}
-
-.playlist-detail-v2 .video-item {
-  border-color: rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.playlist-detail-v2 .video-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 59, 59, 0.2);
-}
-
-.playlist-detail-v2 .video-item.is-current {
-  background: rgba(255, 59, 59, 0.1);
-  border-color: rgba(255, 59, 59, 0.4);
-}
-
-.playlist-detail-v2 .video-number {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-secondary);
-}
-
-.playlist-detail-v2 .video-info-detail h3 {
-  color: var(--text-primary);
-}
-
 /* 無障礙：減少動畫 */
 @media (prefers-reduced-motion: reduce) {
   .back-button:hover,

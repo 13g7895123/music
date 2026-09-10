@@ -62,7 +62,7 @@ function handleToggle() {
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  background-color: white;
+  background-color: var(--surface);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-full);
   cursor: pointer;
@@ -99,7 +99,7 @@ function handleToggle() {
   position: relative;
   width: 44px;
   height: 24px;
-  background-color: #e0e0e0;
+  background-color: var(--line);
   border-radius: var(--radius-lg);
   transition: background-color 0.2s ease;
   flex-shrink: 0;
@@ -115,7 +115,7 @@ function handleToggle() {
   left: 2px;
   width: 20px;
   height: 20px;
-  background-color: white;
+  background-color: var(--surface);
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease;

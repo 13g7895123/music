@@ -277,7 +277,7 @@ onMounted(() => {
 
 .header h1 {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--ink-900);
 }
 
 .filters {
@@ -289,7 +289,7 @@ onMounted(() => {
 .filter-select,
 .search-input {
   padding: 10px 15px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--line);
   border-radius: 5px;
   font-size: 14px;
 }
@@ -305,7 +305,7 @@ onMounted(() => {
 
 .refresh-btn {
   padding: 10px 20px;
-  background-color: #667eea;
+  background-color: var(--amber-500);
   color: white;
   border: none;
   border-radius: 5px;
@@ -325,7 +325,7 @@ onMounted(() => {
 
 .error-message {
   padding: 15px;
-  background-color: #fee;
+  background-color: var(--color-error-alpha);
   border: 1px solid #fcc;
   border-radius: 5px;
   color: #c33;
@@ -336,7 +336,7 @@ onMounted(() => {
 .no-data {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--ink-500);
   font-size: 16px;
 }
 
@@ -345,7 +345,7 @@ onMounted(() => {
   gap: 20px;
   margin-bottom: 15px;
   padding: 10px;
-  background-color: #f5f5f5;
+  background-color: var(--cream-200);
   border-radius: 5px;
   font-size: 14px;
 }
@@ -357,7 +357,7 @@ onMounted(() => {
 
 .logs-table-wrapper {
   overflow-x: auto;
-  background-color: white;
+  background-color: var(--surface);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -390,7 +390,7 @@ onMounted(() => {
 }
 
 .logs-table tbody tr:hover {
-  background-color: #f9f9f9;
+  background-color: var(--cream-200);
 }
 
 .error-row {
@@ -432,13 +432,13 @@ onMounted(() => {
 }
 
 .status-success {
-  background-color: #d4edda;
-  color: #155724;
+  background-color: rgba(111, 168, 107, 0.16);
+  color: #4E7C4B;
 }
 
 .status-error {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: rgba(212, 99, 79, 0.14);
+  color: #A8462F;
 }
 
 .status-warning {
@@ -448,7 +448,7 @@ onMounted(() => {
 
 .view-btn {
   padding: 6px 12px;
-  background-color: #667eea;
+  background-color: var(--amber-500);
   color: white;
   border: none;
   border-radius: 4px;
@@ -477,7 +477,7 @@ onMounted(() => {
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--surface);
   border-radius: 8px;
   max-width: 900px;
   width: 100%;
@@ -512,7 +512,7 @@ onMounted(() => {
 }
 
 .close-btn:hover {
-  color: #333;
+  color: var(--ink-900);
 }
 
 .modal-body {
@@ -527,7 +527,7 @@ onMounted(() => {
   margin-bottom: 15px;
   font-size: 16px;
   color: #555;
-  border-bottom: 2px solid #667eea;
+  border-bottom: 2px solid var(--amber-500);
   padding-bottom: 8px;
 }
 
@@ -540,7 +540,7 @@ onMounted(() => {
 .detail-item label {
   display: block;
   font-weight: 600;
-  color: #666;
+  color: var(--ink-500);
   margin-bottom: 5px;
   font-size: 13px;
 }
@@ -554,8 +554,8 @@ onMounted(() => {
 }
 
 .code-block {
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
+  background-color: var(--cream-200);
+  border: 1px solid var(--line);
   border-radius: 4px;
   padding: 15px;
   overflow-x: auto;

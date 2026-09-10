@@ -114,7 +114,7 @@ const onSavePlaylist = async (playlistData) => {
 }
 
 .btn-primary {
-  background: #1976d2;
+  background: var(--amber-600);
   color: white;
 }
 

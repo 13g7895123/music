@@ -1,5 +1,5 @@
 <template>
-  <div :class="['video-library', { 'video-library-v2': isV2 }]">
+  <div class="video-library">
     <div class="header">
       <h1>
         <FilmIcon class="header-icon" />
@@ -139,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, inject } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useVideoStore } from '@/stores/videoStore'
 import { usePlaylistStore } from '@/stores/playlistStore'
 import { useGlobalPlayerStore } from '@/stores/globalPlayerStore'
@@ -156,7 +156,6 @@ import {
   ChevronRightIcon
 } from '@heroicons/vue/24/outline'
 
-const { isV2 } = inject('theme', { isV2: ref(false) })
 const toast = useToast()
 
 const showConfirmModal = ref(false)
@@ -363,11 +362,11 @@ onMounted(() => {
 .empty {
   text-align: center;
   padding: 48px 24px;
-  color: #666;
+  color: var(--ink-500);
 }
 
 .error {
-  background: #fee;
+  background: var(--color-error-alpha);
   border-radius: var(--radius-sm);
   padding: 24px;
 }
@@ -375,7 +374,7 @@ onMounted(() => {
 .btn-retry {
   margin-top: 12px;
   padding: 8px 16px;
-  background: #667eea;
+  background: var(--amber-500);
   color: white;
   border: none;
   border-radius: var(--radius-sm);
@@ -397,27 +396,15 @@ onMounted(() => {
   margin-top: 24px;
 }
 
-.btn {
-  padding: 8px 16px;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(61, 51, 43, 0.34);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -425,7 +412,7 @@ onMounted(() => {
 }
 
 .modal {
-  background: white;
+  background: var(--surface);
   border-radius: var(--radius-xl);
   max-width: 500px;
   width: 90%;
@@ -489,7 +476,7 @@ onMounted(() => {
   gap: var(--space-3);
   width: 100%;
   padding: var(--space-4);
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -569,72 +556,6 @@ onMounted(() => {
 .btn-primary:hover {
   background: var(--color-brand-primary-dark);
 }
-
-/* ===== V2 深色主題 ===== */
-.video-library-v2 {
-  background: var(--bg-primary);
-  min-height: calc(100vh - 60px);
-}
-
-.video-library-v2 .header h1 {
-  color: var(--text-primary);
-}
-
-.video-library-v2 .search-input {
-  background: var(--v2-input-bg, #0F0F18);
-  border-color: var(--v2-input-border, rgba(255,255,255,0.1));
-  color: var(--text-primary);
-}
-
-.video-library-v2 .search-input:focus {
-  border-color: var(--color-brand-primary);
-  box-shadow: 0 0 0 3px var(--v2-input-focus-glow, rgba(255,59,59,0.2));
-}
-
-.video-library-v2 .search-input::placeholder {
-  color: var(--text-tertiary);
-}
-
-.video-library-v2 .modal {
-  background: var(--v2-card-bg, #13131A);
-  border: 1px solid var(--v2-card-border, rgba(255,255,255,0.06));
-}
-
-.video-library-v2 .modal-header {
-  border-bottom-color: var(--border-color);
-}
-
-.video-library-v2 .modal-header h2 {
-  color: var(--text-primary);
-}
-
-.video-library-v2 .modal-footer {
-  border-top-color: var(--border-color);
-}
-
-.video-library-v2 .playlist-item {
-  background: var(--bg-secondary);
-  border-color: var(--border-color);
-}
-
-.video-library-v2 .playlist-item:hover {
-  background: var(--v2-card-hover-bg, #1C1C26);
-  border-color: var(--v2-card-hover-border, rgba(255,59,59,0.3));
-}
-
-.video-library-v2 .playlist-item span {
-  color: var(--text-primary);
-}
-
-.video-library-v2 .error {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--color-error-light);
-}
-
-.video-library-v2 .empty {
-  color: var(--text-secondary);
-}
-
 /* Modal 動畫 */
 .modal-enter-active,
 .modal-leave-active {

@@ -155,7 +155,9 @@ const savePlaylist = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(61, 51, 43, 0.34);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -163,9 +165,10 @@ const savePlaylist = () => {
 }
 
 .modal-content {
-  background: white;
-  border-radius: var(--radius-md);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-2xl);
   width: 90%;
   max-width: 500px;
   padding: 24px;
@@ -188,7 +191,7 @@ const savePlaylist = () => {
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #666;
+  color: var(--ink-500);
 }
 
 .modal-form {

@@ -66,8 +66,8 @@ const formatDate = (date) => {
 
 <style scoped>
 .playlist-card {
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 16px;
   margin-bottom: 12px;
@@ -89,7 +89,7 @@ const formatDate = (date) => {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--ink-900);
 }
 
 .card-actions {
@@ -102,18 +102,18 @@ const formatDate = (date) => {
   border: none;
   font-size: 18px;
   cursor: pointer;
-  color: #666;
+  color: var(--ink-500);
   padding: 4px 8px;
   border-radius: var(--radius-sm);
   transition: background 0.2s;
 }
 
 .btn-icon:hover {
-  background: #f0f0f0;
+  background: var(--cream-200);
 }
 
 .btn-icon.btn-delete:hover {
-  background: #fee;
+  background: var(--color-error-alpha);
   color: #d32f2f;
 }
 
@@ -123,7 +123,7 @@ const formatDate = (date) => {
 
 .playlist-description {
   margin: 0 0 8px 0;
-  color: #666;
+  color: var(--ink-500);
   font-size: 14px;
 }
 
@@ -149,7 +149,7 @@ const formatDate = (date) => {
 }
 
 .btn-primary {
-  background: #1976d2;
+  background: var(--amber-600);
   color: white;
 }
 

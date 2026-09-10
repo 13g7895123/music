@@ -211,13 +211,13 @@ function handleMuteToggle() {
 .mute-button {
   width: 40px;
   height: 40px;
-  background-color: #f5f5f5;
-  color: #616161;
+  background-color: var(--cream-200);
+  color: var(--ink-500);
 }
 
 .mute-button:hover {
-  background-color: #e0e0e0;
-  color: #212121;
+  background-color: var(--line);
+  color: var(--ink-900);
 }
 
 .mute-button .control-icon {
@@ -253,7 +253,7 @@ function handleMuteToggle() {
   transform: translateY(-50%);
   width: 100%;
   height: 6px;
-  background-color: #e0e0e0;
+  background-color: var(--line);
   border-radius: var(--radius-sm);
   z-index: 0;
 }
@@ -362,7 +362,7 @@ function handleMuteToggle() {
   min-width: 45px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #616161;
+  color: var(--ink-500);
   text-align: right;
   flex-shrink: 0;
 }

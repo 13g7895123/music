@@ -1,14 +1,11 @@
-/* V2 Inter 字體 */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* 介面字體：Nunito 圓體 */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
 
 /* Import Design Tokens */
 @import './assets/design-tokens.css';
 
 /* Import Button and Form Styles */
 @import './assets/button-styles.css';
-
-/* Import V3 Theme (暖陽奶油) - 只在 [data-theme="v3"] 底下生效 */
-@import './assets/theme-v3.css';
 
 /* CSS Reset and Base Styles */
 * {
@@ -28,11 +25,57 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-    'Helvetica Neue', sans-serif;
+  font-family: var(--font-family-base);
   line-height: 1.6;
-  color: var(--text-color);
-  background-color: var(--bg-color);
+  color: var(--text-primary);
+  background-color: var(--cream-100);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-family-display);
+  color: var(--text-primary);
+  letter-spacing: -0.015em;
+  font-weight: var(--font-weight-bold);
+}
+
+::selection {
+  background: rgba(224, 141, 90, 0.24);
+  color: var(--ink-900);
+}
+
+:focus-visible {
+  outline: 2px solid var(--amber-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 捲軸 */
+* {
+  scrollbar-color: var(--cream-400) transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--cream-400);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--radius-full);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-300);
+  background-clip: content-box;
 }
 
 button {
@@ -70,9 +113,9 @@ input {
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 3px solid rgba(0, 0, 0, 0.1);
+  border: 3px solid var(--cream-300);
   border-radius: 50%;
-  border-top-color: var(--primary-color);
+  border-top-color: var(--amber-500);
   animation: spin 1s linear infinite;
 }
 
@@ -86,8 +129,8 @@ input {
   content: attr(data-tooltip);
   position: absolute;
   padding: var(--space-2) var(--space-3);
-  background: rgba(33, 33, 33, 0.95);
-  color: white;
+  background: rgba(61, 51, 43, 0.95);
+  color: #fff;
   font-size: var(--font-size-xs);
   border-radius: var(--radius-sm);
   white-space: nowrap;
@@ -206,30 +249,6 @@ input {
   [data-tooltip]:hover:focus::after {
     opacity: 1;
   }
-}
-
-/* ==================== V2 Toast 樣式（全域，因 Toast Teleport 到 body） ==================== */
-[data-theme="v2"] .toast {
-  background: #1C1C26 !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
-}
-
-[data-theme="v2"] .toast-title {
-  color: #F1F5F9 !important;
-}
-
-[data-theme="v2"] .toast-message {
-  color: #94A3B8 !important;
-}
-
-[data-theme="v2"] .toast-close {
-  color: #64748B !important;
-}
-
-[data-theme="v2"] .toast-close:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #F1F5F9 !important;
 }
 
 /* ==================== Focus 可見狀態（無障礙） ==================== */
