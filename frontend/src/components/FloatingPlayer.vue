@@ -741,13 +741,13 @@ onUnmounted(() => {
   bottom: 20px;
   z-index: 9999;
   font-family: var(--font-family-base, 'Nunito', -apple-system, sans-serif);
-  color: var(--pl-ink-900, #3D332B);
+  color: var(--ink-900, #3D332B);
 }
 
 .pl-shell {
   display: grid;
-  background: var(--pl-surface, #FFFDF9);
-  border: 1px solid var(--pl-line, #EBDFCC);
+  background: var(--surface, #FFFDF9);
+  border: 1px solid var(--line, #EBDFCC);
   box-shadow: 0 24px 56px rgba(122, 88, 56, 0.18);
   overflow: hidden;
 }
@@ -799,17 +799,16 @@ onUnmounted(() => {
   background: #17120E;
 }
 
+/* 用 padding-bottom 撐出 16:9，不要用 aspect-ratio。
+   .pl-stage 是 grid item（align-self 預設 stretch），而它唯一的子元素
+   .pl-stage-inner 是 position:absolute 脫離文件流，等於沒有內容可以撐高；
+   這種組合下 aspect-ratio 在部分瀏覽器會被 stretch 蓋掉、高度算成 0，
+   結果就是影片區整塊不見，只看到卡片白底。 */
 .pl-player.expanded .pl-stage {
   width: 100%;
-  aspect-ratio: 16 / 9;
-}
-
-/* 舊瀏覽器不支援 aspect-ratio 時，高度會變成 0、影片整個看不見 */
-@supports not (aspect-ratio: 16 / 9) {
-  .pl-player.expanded .pl-stage {
-    height: 0;
-    padding-bottom: 56.25%;
-  }
+  height: 0;
+  padding-bottom: 56.25%;
+  align-self: start;
 }
 
 .pl-stage-inner {
@@ -830,6 +829,7 @@ onUnmounted(() => {
 .pl-player.mini .pl-stage {
   width: 68px;
   height: 38px;
+  padding-bottom: 0;
   border-radius: 10px;
   cursor: pointer;
   flex: none;
@@ -878,7 +878,7 @@ onUnmounted(() => {
   font-weight: 700;
   line-height: 1.4;
   letter-spacing: -0.01em;
-  color: var(--pl-ink-900, #3D332B);
+  color: var(--ink-900, #3D332B);
 }
 
 .pl-player.expanded .pl-title {
@@ -902,7 +902,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--pl-ink-300, #AC9B88);
+  color: var(--ink-300, #AC9B88);
 }
 
 .pl-sub:empty {
@@ -918,7 +918,7 @@ onUnmounted(() => {
   padding: 2px 8px;
   border-radius: 999px;
   background: rgba(224, 141, 90, 0.14);
-  color: var(--pl-amber-700, #A85C31);
+  color: var(--amber-700, #A85C31);
   font-size: 11px;
   font-weight: 700;
 }
@@ -946,14 +946,14 @@ onUnmounted(() => {
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: var(--pl-ink-500, #877565);
+  color: var(--ink-500, #877565);
   cursor: pointer;
   transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
 .pl-iconbtn:hover:not(:disabled) {
-  background: var(--pl-cream-300, #F0E4D2);
-  color: var(--pl-ink-900, #3D332B);
+  background: var(--cream-300, #F0E4D2);
+  color: var(--ink-900, #3D332B);
 }
 
 .pl-iconbtn:active:not(:disabled) {
@@ -967,16 +967,16 @@ onUnmounted(() => {
 
 .pl-iconbtn.on {
   background: rgba(224, 141, 90, 0.16);
-  color: var(--pl-amber-700, #A85C31);
+  color: var(--amber-700, #A85C31);
 }
 
 .pl-iconbtn.muted {
-  color: var(--pl-terracotta, #D4634F);
+  color: var(--terracotta, #D4634F);
 }
 
 .pl-close:hover {
   background: rgba(212, 99, 79, 0.14);
-  color: var(--pl-terracotta, #D4634F);
+  color: var(--terracotta, #D4634F);
 }
 
 .pl-player.mini .pl-iconbtn {
@@ -993,7 +993,7 @@ onUnmounted(() => {
   border: none;
   border-radius: 999px;
   color: #fff;
-  background: var(--pl-accent-gradient, linear-gradient(135deg, #EDA97B, #E08D5A));
+  background: var(--accent-gradient, linear-gradient(135deg, #EDA97B, #E08D5A));
   box-shadow: 0 6px 16px rgba(201, 116, 66, 0.32);
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease;
@@ -1047,7 +1047,7 @@ onUnmounted(() => {
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--pl-ink-300, #AC9B88);
+  color: var(--ink-300, #AC9B88);
 }
 
 .pl-time:last-child {
@@ -1059,7 +1059,7 @@ onUnmounted(() => {
   flex: 1;
   height: 6px;
   border-radius: 999px;
-  background: var(--pl-cream-300, #F0E4D2);
+  background: var(--cream-300, #F0E4D2);
 }
 
 .pl-track-fill {
@@ -1068,7 +1068,7 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   border-radius: 999px;
-  background: var(--pl-accent-gradient, linear-gradient(135deg, #EDA97B, #E08D5A));
+  background: var(--accent-gradient, linear-gradient(135deg, #EDA97B, #E08D5A));
   pointer-events: none;
 }
 
@@ -1081,7 +1081,7 @@ onUnmounted(() => {
   height: 13px;
   border-radius: 999px;
   background: #fff;
-  border: 2px solid var(--pl-amber-500, #E08D5A);
+  border: 2px solid var(--amber-500, #E08D5A);
   transform: translateY(-50%) scale(0);
   transition: transform 160ms ease;
 }
@@ -1145,8 +1145,8 @@ onUnmounted(() => {
   cursor: pointer;
   background: linear-gradient(
     to right,
-    var(--pl-amber-500, #E08D5A) var(--pct, 100%),
-    var(--pl-cream-300, #F0E4D2) var(--pct, 100%)
+    var(--amber-500, #E08D5A) var(--pct, 100%),
+    var(--cream-300, #F0E4D2) var(--pct, 100%)
   );
 }
 
@@ -1157,7 +1157,7 @@ onUnmounted(() => {
   height: 14px;
   border-radius: 999px;
   background: #fff;
-  border: 2px solid var(--pl-amber-500, #E08D5A);
+  border: 2px solid var(--amber-500, #E08D5A);
   box-shadow: 0 1px 3px rgba(122, 88, 56, 0.3);
 }
 
@@ -1166,7 +1166,7 @@ onUnmounted(() => {
   height: 14px;
   border-radius: 999px;
   background: #fff;
-  border: 2px solid var(--pl-amber-500, #E08D5A);
+  border: 2px solid var(--amber-500, #E08D5A);
 }
 
 /* ---------------- 迷你模式的細進度線 ---------------- */
@@ -1182,7 +1182,7 @@ onUnmounted(() => {
   right: 18px;
   height: 3px;
   border-radius: 999px;
-  background: var(--pl-cream-300, #F0E4D2);
+  background: var(--cream-300, #F0E4D2);
   overflow: hidden;
   z-index: 2;
 }
@@ -1191,7 +1191,7 @@ onUnmounted(() => {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--pl-accent-gradient, linear-gradient(135deg, #EDA97B, #E08D5A));
+  background: var(--accent-gradient, linear-gradient(135deg, #EDA97B, #E08D5A));
   transition: width 240ms linear;
 }
 
@@ -1201,8 +1201,8 @@ onUnmounted(() => {
   width: 300px;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--pl-line, #EBDFCC);
-  background: var(--pl-cream-100, #FDF8F0);
+  border-left: 1px solid var(--line, #EBDFCC);
+  background: var(--cream-100, #FDF8F0);
   min-height: 0;
 }
 
@@ -1217,13 +1217,13 @@ onUnmounted(() => {
   padding: 16px 18px 10px;
   font-size: 13px;
   font-weight: 700;
-  color: var(--pl-ink-700, #5C4F44);
+  color: var(--ink-700, #5C4F44);
 }
 
 .pl-queue-count {
   font-size: 11px;
   font-weight: 600;
-  color: var(--pl-ink-300, #AC9B88);
+  color: var(--ink-300, #AC9B88);
 }
 
 .pl-queue-list {
@@ -1246,19 +1246,19 @@ onUnmounted(() => {
   background: transparent;
   text-align: left;
   cursor: pointer;
-  color: var(--pl-ink-700, #5C4F44);
+  color: var(--ink-700, #5C4F44);
   font-family: inherit;
   transition: background 160ms ease, color 160ms ease;
 }
 
 .pl-queue-item:hover {
-  background: var(--pl-cream-300, #F0E4D2);
-  color: var(--pl-ink-900, #3D332B);
+  background: var(--cream-300, #F0E4D2);
+  color: var(--ink-900, #3D332B);
 }
 
 .pl-queue-item.current {
   background: rgba(224, 141, 90, 0.14);
-  color: var(--pl-amber-700, #A85C31);
+  color: var(--amber-700, #A85C31);
 }
 
 .pl-queue-index {
@@ -1270,11 +1270,11 @@ onUnmounted(() => {
   font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--pl-ink-300, #AC9B88);
+  color: var(--ink-300, #AC9B88);
 }
 
 .pl-queue-item.current .pl-queue-index {
-  color: var(--pl-amber-600, #C97442);
+  color: var(--amber-600, #C97442);
 }
 
 .pl-queue-title {
@@ -1292,7 +1292,7 @@ onUnmounted(() => {
   flex: none;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
-  color: var(--pl-ink-300, #AC9B88);
+  color: var(--ink-300, #AC9B88);
 }
 
 /* ---------------- 滿版 ---------------- */
@@ -1355,7 +1355,7 @@ onUnmounted(() => {
   .pl-queue {
     width: auto;
     border-left: none;
-    border-top: 1px solid var(--pl-line, #EBDFCC);
+    border-top: 1px solid var(--line, #EBDFCC);
     max-height: 200px;
   }
 
