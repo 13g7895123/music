@@ -2,7 +2,11 @@
   <div id="app" :class="['container', { 'container-v2': isV2 }]">
 
     <!-- ===== A: 音頻可視化粒子背景（全局 fixed） ===== -->
-    <AudioVisualizer :is-playing="player.isPlaying.value" />
+    <AudioVisualizer
+      :key="'av-' + (isV3 ? 'v3' : 'v12')"
+      :is-playing="player.isPlaying.value"
+      :palette="visualizerPalette"
+    />
 
     <!-- ===== B: Hero 3D 場景（首頁未播放時） ===== -->
     <Transition name="hero-fade">
@@ -11,7 +15,11 @@
         class="hero-section"
         :class="{ 'hero-section--dark': isV2 }"
       >
-        <HeroScene :visible="true" />
+        <HeroScene
+          :key="'hero-' + (isV3 ? 'v3' : 'v12')"
+          :visible="true"
+          :palette="heroPalette"
+        />
         <div class="hero-content">
           <h1 class="hero-title">
             <span class="hero-title-line">YouTube</span>
@@ -148,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, inject } from 'vue'
+import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import UrlInput from '../components/UrlInput.vue'
 import VideoPlayer from '../components/VideoPlayer.vue'
@@ -167,7 +175,29 @@ import { useGuestHistory } from '../composables/useGuestHistory'
 import { useAuthStore } from '../stores/auth'
 
 // 主題
-const { isV2 } = inject('theme', { isV2: ref(false) })
+const { isV2, isV3 } = inject('theme', { isV2: ref(false), isV3: ref(false) })
+
+// v3「暖陽奶油」的 3D 場景配色：奶油底不適合霓虹紅，改用暖橘／蜜黃／鼠尾草綠
+const V3_HERO_PALETTE = {
+  particleA: '#E08D5A',
+  particleB: '#8FBF9F',
+  particleC: '#E7C36A',
+  torus: '#E9A16E',
+  torusEmissive: '#D9834A',
+  torusInner: '#8FBF9F',
+  torusInnerEmissive: '#6FA88B',
+  triangle: '#FFFBF4',
+  light: '#F0B27F'
+}
+
+const V3_VISUALIZER_PALETTE = {
+  particles: ['#E08D5A', '#EDBF8E', '#A8CDB4', '#E7C36A', '#FFFBF4'],
+  waves: ['#E08D5A', '#EDA97B', '#A8CDB4', '#E7C36A', '#C99B6A'],
+  rings: ['#E08D5A', '#A8CDB4', '#E7C36A']
+}
+
+const heroPalette = computed(() => (isV3.value ? V3_HERO_PALETTE : undefined))
+const visualizerPalette = computed(() => (isV3.value ? V3_VISUALIZER_PALETTE : undefined))
 
 // 路由
 const route = useRoute()

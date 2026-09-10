@@ -1,0 +1,863 @@
+/**
+ * Theme V3 — 暖陽奶油 (Warm Cream)
+ * ---------------------------------------------------------------
+ * 全站換膚層，只在 [data-theme="v3"] 底下生效。
+ * v1 / v2 的樣式完全不受影響，切回去就是原本的樣子。
+ *
+ * 兩段式作法：
+ *   1. 覆寫 design-tokens 的變數 → 按鈕、表單、卡片等有用 token 的地方自動換色
+ *   2. 針對硬編碼顏色／需要調整版面的元件做定點覆寫
+ *
+ * 選擇器一律用 body[data-theme="v3"] 開頭，權重才壓得過 Vue scoped style
+ * （scoped 產生的 .x[data-v-xxx] 與 .x 同權重，靠 body 這個元素選擇器勝出）。
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   1. Design Token 覆寫
+   ============================================================ */
+[data-theme="v3"] {
+  /* ---- 調色盤 ---- */
+  --v3-cream-50:  #FFFDF9;  /* 卡片、浮起表面 */
+  --v3-cream-100: #FDF8F0;  /* 頁面底色 */
+  --v3-cream-200: #F7EFE3;  /* 次級表面 */
+  --v3-cream-300: #F0E4D2;  /* hover / 三級表面 */
+  --v3-cream-400: #E5D5BE;  /* 強邊框 */
+  --v3-line:      #EBDFCC;  /* 一般邊框 */
+
+  --v3-ink-900: #3D332B;    /* 主文字 深咖 */
+  --v3-ink-700: #5C4F44;
+  --v3-ink-500: #877565;    /* 次文字 */
+  --v3-ink-300: #AC9B88;    /* 三級文字 */
+
+  --v3-amber-300: #F7DCC2;
+  --v3-amber-400: #EDA97B;
+  --v3-amber-500: #E08D5A;  /* 主色 暖橘 */
+  --v3-amber-600: #C97442;
+  --v3-amber-700: #A85C31;
+
+  --v3-sage:      #6FA86B;  /* 成功 */
+  --v3-honey:     #DFA43A;  /* 警告 */
+  --v3-terracotta:#D4634F;  /* 錯誤 */
+  --v3-sky:       #6B94B8;  /* 資訊 */
+
+  --v3-shadow-tint: 122, 88, 56;
+
+  /* ---- 品牌色 ---- */
+  --color-brand-primary: var(--v3-amber-500);
+  --color-brand-primary-dark: var(--v3-amber-600);
+  --color-brand-primary-light: var(--v3-amber-400);
+  --color-brand-primary-alpha: rgba(224, 141, 90, 0.16);
+
+  /* ---- 語義色 ---- */
+  --color-success: var(--v3-sage);
+  --color-success-dark: #588A55;
+  --color-success-light: #93C48F;
+  --color-success-alpha: rgba(111, 168, 107, 0.14);
+
+  --color-warning: var(--v3-honey);
+  --color-warning-dark: #BE8722;
+  --color-warning-light: #EFC470;
+  --color-warning-alpha: rgba(223, 164, 58, 0.14);
+
+  --color-error: var(--v3-terracotta);
+  --color-error-dark: #B24C3A;
+  --color-error-light: #E28B7B;
+  --color-error-alpha: rgba(212, 99, 79, 0.14);
+
+  --color-info: var(--v3-sky);
+  --color-info-dark: #547B9C;
+  --color-info-light: #97B6D0;
+  --color-info-alpha: rgba(107, 148, 184, 0.14);
+
+  /* ---- 中性色 ---- */
+  --color-neutral-900: var(--v3-ink-900);
+  --color-neutral-800: #4B3F35;
+  --color-neutral-700: var(--v3-ink-700);
+  --color-neutral-600: #6E5F52;
+  --color-neutral-500: var(--v3-ink-500);
+  --color-neutral-400: #9C8B79;
+  --color-neutral-300: var(--v3-cream-400);
+  --color-neutral-200: var(--v3-cream-300);
+  --color-neutral-100: var(--v3-cream-200);
+  --color-neutral-50:  var(--v3-cream-100);
+
+  /* ---- 背景 ---- */
+  --bg-primary: var(--v3-cream-100);
+  --bg-secondary: var(--v3-cream-200);
+  --bg-tertiary: var(--v3-cream-300);
+  --bg-overlay: rgba(61, 51, 43, 0.42);
+  --bg-overlay-light: rgba(61, 51, 43, 0.22);
+  --bg-overlay-dark: rgba(61, 51, 43, 0.62);
+
+  /* ---- 文字 ---- */
+  --text-primary: var(--v3-ink-900);
+  --text-secondary: var(--v3-ink-500);
+  --text-tertiary: var(--v3-ink-300);
+  --text-disabled: #C3B5A2;
+  --text-inverse: #FFFDF9;
+
+  /* ---- 邊框 ---- */
+  --border-color: var(--v3-line);
+  --border-color-hover: var(--v3-cream-400);
+  --border-color-focus: var(--v3-amber-500);
+
+  /* ---- 圓角：整體放大，走圓潤路線 ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+
+  /* ---- 陰影：帶暖色調、更柔更散 ---- */
+  --shadow-xs: 0 1px 2px rgba(var(--v3-shadow-tint), 0.05);
+  --shadow-sm: 0 2px 6px rgba(var(--v3-shadow-tint), 0.07);
+  --shadow-md: 0 6px 18px rgba(var(--v3-shadow-tint), 0.10);
+  --shadow-lg: 0 14px 34px rgba(var(--v3-shadow-tint), 0.13);
+  --shadow-xl: 0 24px 56px rgba(var(--v3-shadow-tint), 0.16);
+  --shadow-2xl: 0 32px 72px rgba(var(--v3-shadow-tint), 0.20);
+
+  /* ---- 動態：稍慢一點，感覺比較從容 ---- */
+  --transition-fast: 160ms cubic-bezier(0.32, 0.72, 0, 1);
+  --transition-base: 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  --transition-slow: 420ms cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ---- v3 專屬 ---- */
+  --v3-surface: var(--v3-cream-50);
+  --v3-surface-sunken: var(--v3-cream-200);
+  --v3-ring: 0 0 0 3px rgba(224, 141, 90, 0.18);
+  --v3-accent-gradient: linear-gradient(135deg, #EDA97B 0%, #E08D5A 55%, #D97F4C 100%);
+  --v3-page-glow:
+    radial-gradient(1100px 620px at 12% -10%, rgba(247, 220, 194, 0.55), transparent 62%),
+    radial-gradient(900px 520px at 92% 4%, rgba(214, 231, 222, 0.45), transparent 60%);
+  --font-family-display: 'Nunito', 'Inter', -apple-system, BlinkMacSystemFont,
+    'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  --font-family-base: 'Nunito', 'Inter', -apple-system, BlinkMacSystemFont,
+    'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+}
+
+/* ============================================================
+   2. 基礎版面
+   ============================================================ */
+body[data-theme="v3"] {
+  font-family: var(--font-family-base);
+  color: var(--text-primary);
+  background-color: var(--v3-cream-100);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body[data-theme="v3"] #app {
+  background-color: var(--v3-cream-100);
+  background-image: var(--v3-page-glow);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+body[data-theme="v3"] h1,
+body[data-theme="v3"] h2,
+body[data-theme="v3"] h3,
+body[data-theme="v3"] h4 {
+  font-family: var(--font-family-display);
+  color: var(--text-primary);
+  letter-spacing: -0.015em;
+  font-weight: 700;
+}
+
+/* 選取顏色 */
+body[data-theme="v3"] ::selection {
+  background: rgba(224, 141, 90, 0.24);
+  color: var(--v3-ink-900);
+}
+
+/* 捲軸 */
+body[data-theme="v3"] * {
+  scrollbar-color: var(--v3-cream-400) transparent;
+  scrollbar-width: thin;
+}
+body[data-theme="v3"] *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+body[data-theme="v3"] *::-webkit-scrollbar-track {
+  background: transparent;
+}
+body[data-theme="v3"] *::-webkit-scrollbar-thumb {
+  background: var(--v3-cream-400);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+body[data-theme="v3"] *::-webkit-scrollbar-thumb:hover {
+  background: var(--v3-ink-300);
+  background-clip: content-box;
+}
+
+/* 統一的鍵盤焦點框 */
+body[data-theme="v3"] :focus-visible {
+  outline: 2px solid var(--v3-amber-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================
+   3. Navbar
+   ============================================================ */
+body[data-theme="v3"] .navbar {
+  background: rgba(253, 248, 240, 0.78);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: none;
+  border-bottom: 1px solid rgba(235, 223, 204, 0.9);
+}
+
+body[data-theme="v3"] .nav-container {
+  padding: 0.875rem 1.25rem;
+}
+
+body[data-theme="v3"] .nav-brand {
+  font-family: var(--font-family-display);
+  color: var(--v3-ink-900);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+body[data-theme="v3"] .nav-brand:hover {
+  color: var(--v3-amber-600);
+}
+
+body[data-theme="v3"] .brand-icon-img {
+  border-radius: 10px;
+}
+
+body[data-theme="v3"] .nav-link {
+  color: var(--v3-ink-500);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+
+body[data-theme="v3"] .nav-link:hover {
+  background: var(--v3-cream-300);
+  color: var(--v3-ink-900);
+}
+
+body[data-theme="v3"] .nav-link.router-link-active {
+  color: var(--v3-amber-700);
+  background: rgba(224, 141, 90, 0.14);
+}
+
+/* ============================================================
+   4. 按鈕
+   ============================================================ */
+body[data-theme="v3"] .btn {
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+body[data-theme="v3"] .btn-primary {
+  background: var(--v3-accent-gradient);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(201, 116, 66, 0.24);
+}
+
+body[data-theme="v3"] .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #E8A071 0%, #D97F4C 55%, #C97442 100%);
+  border-color: transparent;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(201, 116, 66, 0.30);
+}
+
+body[data-theme="v3"] .btn-secondary,
+body[data-theme="v3"] .btn-outline-secondary {
+  background: var(--v3-surface);
+  color: var(--v3-ink-700);
+  border-color: var(--v3-line);
+}
+
+body[data-theme="v3"] .btn-secondary:hover:not(:disabled),
+body[data-theme="v3"] .btn-outline-secondary:hover:not(:disabled) {
+  background: var(--v3-cream-200);
+  border-color: var(--v3-cream-400);
+  color: var(--v3-ink-900);
+}
+
+body[data-theme="v3"] .btn-ghost {
+  color: var(--v3-ink-500);
+}
+
+body[data-theme="v3"] .btn-ghost:hover:not(:disabled) {
+  background: var(--v3-cream-300);
+  color: var(--v3-ink-900);
+}
+
+body[data-theme="v3"] .btn-icon {
+  border-radius: var(--radius-full);
+  color: var(--v3-ink-500);
+}
+
+body[data-theme="v3"] .btn-icon:hover:not(:disabled) {
+  background: var(--v3-cream-300);
+  color: var(--v3-ink-900);
+}
+
+/* ============================================================
+   5. 表單
+   ============================================================ */
+body[data-theme="v3"] input[type="text"],
+body[data-theme="v3"] input[type="email"],
+body[data-theme="v3"] input[type="password"],
+body[data-theme="v3"] input[type="number"],
+body[data-theme="v3"] input[type="url"],
+body[data-theme="v3"] input[type="search"],
+body[data-theme="v3"] textarea,
+body[data-theme="v3"] select {
+  background-color: var(--v3-surface);
+  border-color: var(--v3-line);
+  border-radius: var(--radius-lg);
+  color: var(--v3-ink-900);
+}
+
+body[data-theme="v3"] input::placeholder,
+body[data-theme="v3"] textarea::placeholder {
+  color: var(--v3-ink-300);
+}
+
+body[data-theme="v3"] input:focus,
+body[data-theme="v3"] textarea:focus,
+body[data-theme="v3"] select:focus {
+  border-color: var(--v3-amber-400);
+  box-shadow: var(--v3-ring);
+}
+
+body[data-theme="v3"] .form-group label {
+  color: var(--v3-ink-700);
+  font-weight: 600;
+}
+
+/* ============================================================
+   6. 首頁 Hero
+   ============================================================ */
+body[data-theme="v3"] .hero-section {
+  background: transparent;
+}
+
+/* v3 不走 v2 的暗色 hero */
+body[data-theme="v3"] .hero-section.hero-section--dark {
+  background: transparent;
+}
+
+body[data-theme="v3"] .hero-title {
+  font-family: var(--font-family-display);
+  color: var(--v3-ink-900);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-shadow: none;
+}
+
+body[data-theme="v3"] .hero-title-accent {
+  background: var(--v3-accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+body[data-theme="v3"] .hero-subtitle {
+  color: var(--v3-ink-500);
+  font-weight: 500;
+}
+
+body[data-theme="v3"] .hero-badges .badge {
+  background: rgba(255, 253, 249, 0.82);
+  border: 1px solid var(--v3-line);
+  color: var(--v3-ink-700);
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-xs);
+  font-weight: 600;
+}
+
+/* ============================================================
+   7. 網址輸入列 — v3 做成一體成形的膠囊
+   ============================================================ */
+body[data-theme="v3"] .url-input-container .input-group {
+  background: var(--v3-surface);
+  border: 1px solid var(--v3-line);
+  border-radius: var(--radius-full);
+  padding: 6px 6px 6px 8px;
+  box-shadow: var(--shadow-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+body[data-theme="v3"] .url-input-container .input-group:focus-within {
+  border-color: var(--v3-amber-400);
+  box-shadow: var(--shadow-lg), var(--v3-ring);
+}
+
+body[data-theme="v3"] .url-input-container .url-input {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding-left: var(--space-4);
+  font-size: var(--font-size-base);
+}
+
+body[data-theme="v3"] .url-input-container .url-input:focus {
+  border: none;
+  box-shadow: none;
+}
+
+body[data-theme="v3"] .validation-error {
+  color: var(--v3-terracotta);
+  font-weight: 500;
+}
+
+/* ============================================================
+   8. 卡片（影片卡 / 播放清單卡）
+   ============================================================ */
+body[data-theme="v3"] .video-card,
+body[data-theme="v3"] .playlist-card {
+  background: var(--v3-surface);
+  border: 1px solid var(--v3-line);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: transform var(--transition-base), box-shadow var(--transition-base),
+    border-color var(--transition-base);
+}
+
+body[data-theme="v3"] .video-card:hover,
+body[data-theme="v3"] .playlist-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--v3-cream-400);
+}
+
+body[data-theme="v3"] .video-card .thumbnail-container {
+  background: var(--v3-cream-200);
+  border-radius: 0;
+}
+
+body[data-theme="v3"] .video-card .thumbnail-placeholder {
+  background: linear-gradient(135deg, var(--v3-cream-200), var(--v3-cream-300));
+  color: var(--v3-ink-300);
+}
+
+body[data-theme="v3"] .video-card .duration {
+  background: rgba(61, 51, 43, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: var(--radius-full);
+  color: #fff;
+  font-weight: 600;
+}
+
+body[data-theme="v3"] .video-card .title,
+body[data-theme="v3"] .playlist-card .playlist-title {
+  font-family: var(--font-family-display);
+  color: var(--v3-ink-900);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+body[data-theme="v3"] .video-card .channel,
+body[data-theme="v3"] .video-card .description,
+body[data-theme="v3"] .playlist-card .playlist-description {
+  color: var(--v3-ink-500);
+}
+
+body[data-theme="v3"] .video-card .btn-delete-corner {
+  background: rgba(255, 253, 249, 0.9);
+  color: var(--v3-terracotta);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+body[data-theme="v3"] .video-card .btn-delete-corner:hover {
+  background: var(--v3-terracotta);
+  color: #fff;
+}
+
+body[data-theme="v3"] .playlist-card .card-header,
+body[data-theme="v3"] .playlist-card .card-footer {
+  border-color: var(--v3-line);
+}
+
+body[data-theme="v3"] .playlist-card .video-count,
+body[data-theme="v3"] .playlist-card .created-date,
+body[data-theme="v3"] .playlist-card .playlist-meta {
+  color: var(--v3-ink-300);
+}
+
+/* 清單裡的單首影片列 */
+body[data-theme="v3"] .video-item,
+body[data-theme="v3"] .playlist-item {
+  background: var(--v3-surface);
+  border: 1px solid var(--v3-line);
+  border-radius: var(--radius-lg);
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+body[data-theme="v3"] .video-item:hover,
+body[data-theme="v3"] .playlist-item:hover {
+  background: var(--v3-cream-200);
+  border-color: var(--v3-cream-400);
+  transform: translateX(2px);
+}
+
+body[data-theme="v3"] .video-item.is-current {
+  background: rgba(224, 141, 90, 0.10);
+  border-color: var(--v3-amber-400);
+  box-shadow: inset 3px 0 0 var(--v3-amber-500);
+}
+
+body[data-theme="v3"] .video-item .video-number,
+body[data-theme="v3"] .video-item .index {
+  color: var(--v3-ink-300);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   9. 彈窗
+   ============================================================ */
+body[data-theme="v3"] .modal-overlay {
+  background: rgba(61, 51, 43, 0.34);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+body[data-theme="v3"] .modal,
+body[data-theme="v3"] .modal-content,
+body[data-theme="v3"] .confirm-modal {
+  background: var(--v3-surface);
+  border: 1px solid var(--v3-line);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-2xl);
+}
+
+body[data-theme="v3"] .modal-header,
+body[data-theme="v3"] .modal-footer,
+body[data-theme="v3"] .modal-actions {
+  border-color: var(--v3-line);
+}
+
+body[data-theme="v3"] .modal-header h2,
+body[data-theme="v3"] .modal-header h3 {
+  font-family: var(--font-family-display);
+  color: var(--v3-ink-900);
+}
+
+/* ============================================================
+   10. Toast / 錯誤訊息 / 空狀態 / 骨架屏
+   ============================================================ */
+body[data-theme="v3"] .toast {
+  background: var(--v3-surface);
+  border: 1px solid var(--v3-line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  color: var(--v3-ink-900);
+}
+
+body[data-theme="v3"] .toast-message {
+  color: var(--v3-ink-500);
+}
+
+body[data-theme="v3"] .error-message,
+body[data-theme="v3"] .error-content {
+  background: rgba(212, 99, 79, 0.08);
+  border-color: rgba(212, 99, 79, 0.28);
+  border-radius: var(--radius-lg);
+  color: var(--v3-ink-900);
+}
+
+body[data-theme="v3"] .empty,
+body[data-theme="v3"] .empty-state {
+  background: rgba(255, 253, 249, 0.6);
+  border: 1px dashed var(--v3-cream-400);
+  border-radius: var(--radius-2xl);
+  color: var(--v3-ink-500);
+}
+
+body[data-theme="v3"] .empty-icon,
+body[data-theme="v3"] .header-icon,
+body[data-theme="v3"] .section-icon,
+body[data-theme="v3"] .search-icon {
+  color: var(--v3-amber-500);
+}
+
+body[data-theme="v3"] .skeleton-card,
+body[data-theme="v3"] .sk {
+  background: var(--v3-cream-200);
+  border-radius: var(--radius-lg);
+}
+
+body[data-theme="v3"] .skeleton-card {
+  border: 1px solid var(--v3-line);
+  border-radius: var(--radius-2xl);
+}
+
+/* ============================================================
+   11. 其他零件
+   ============================================================ */
+body[data-theme="v3"] .search-bar {
+  background: var(--v3-surface);
+  border: 1px solid var(--v3-line);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-xs);
+}
+
+body[data-theme="v3"] .search-bar .search-input {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+body[data-theme="v3"] .stat-item,
+body[data-theme="v3"] .system-badge,
+body[data-theme="v3"] .status {
+  border-radius: var(--radius-full);
+}
+
+body[data-theme="v3"] .stat-icon {
+  color: var(--v3-amber-500);
+}
+
+body[data-theme="v3"] .pagination button {
+  background: var(--v3-surface);
+  border: 1px solid var(--v3-line);
+  border-radius: var(--radius-full);
+  color: var(--v3-ink-700);
+}
+
+body[data-theme="v3"] .pagination button:hover:not(:disabled) {
+  background: var(--v3-cream-200);
+  border-color: var(--v3-cream-400);
+}
+
+body[data-theme="v3"] .back-button {
+  color: var(--v3-ink-500);
+  border-radius: var(--radius-full);
+}
+
+body[data-theme="v3"] .back-button:hover {
+  background: var(--v3-cream-300);
+  color: var(--v3-ink-900);
+}
+
+body[data-theme="v3"] .user-menu .login-button {
+  border-radius: var(--radius-full);
+}
+
+body[data-theme="v3"] .user-menu .user-name {
+  color: var(--v3-ink-900);
+  font-weight: 600;
+}
+
+body[data-theme="v3"] .user-avatar,
+body[data-theme="v3"] .user-avatar-placeholder {
+  border: 2px solid var(--v3-cream-300);
+}
+
+/* Tooltip 配色 */
+body[data-theme="v3"] [data-tooltip]::before {
+  background: rgba(61, 51, 43, 0.95);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+/* 主題切換鈕 */
+body[data-theme="v3"] .theme-toggle {
+  background: var(--v3-surface);
+  border-color: var(--v3-line);
+  color: var(--v3-ink-700);
+  font-weight: 600;
+}
+
+body[data-theme="v3"] .theme-toggle:hover {
+  background: var(--v3-cream-200);
+  border-color: var(--v3-cream-400);
+  color: var(--v3-ink-900);
+}
+
+/* ============================================================
+   12. Home 首頁定點覆寫
+   Home.vue 的 hero 整段是寫死深色的（不分主題），
+   而且輸入框那組用了 !important，所以這裡也得用 !important 壓回來。
+   ============================================================ */
+
+/* Hero 底色：暖陽奶油漸層取代原本的夜色 */
+body[data-theme="v3"] .hero-section,
+body[data-theme="v3"] .hero-section.hero-section--dark {
+  background: linear-gradient(168deg, #FFF6E9 0%, #FDF3E4 45%, #F6EFE6 100%);
+}
+
+body[data-theme="v3"] .hero-title-line {
+  color: var(--v3-ink-900);
+}
+
+body[data-theme="v3"] .hero-title-accent {
+  background: linear-gradient(135deg, #E9A16E 0%, #E08D5A 45%, #C97442 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 6px 18px rgba(224, 141, 90, 0.28));
+}
+
+body[data-theme="v3"] .hero-subtitle {
+  color: var(--v3-ink-500);
+}
+
+/* Hero 輸入框：原本是深色玻璃質感 + 白字，奶油底下會完全看不見 */
+body[data-theme="v3"] .hero-url-input .url-input {
+  background: transparent !important;
+  border: none !important;
+  color: var(--v3-ink-900) !important;
+  backdrop-filter: none;
+  border-radius: var(--radius-full);
+}
+
+body[data-theme="v3"] .hero-url-input .url-input::placeholder {
+  color: var(--v3-ink-300) !important;
+}
+
+body[data-theme="v3"] .hero-url-input .url-input:focus {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body[data-theme="v3"] .hero-url-input .btn-primary {
+  background: var(--v3-accent-gradient) !important;
+  border: none !important;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 14px rgba(201, 116, 66, 0.28);
+}
+
+body[data-theme="v3"] .hero-url-input .btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 22px rgba(201, 116, 66, 0.34) !important;
+}
+
+/* 播放中版面的標題 */
+body[data-theme="v3"] .app-title {
+  background: var(--v3-accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--v3-amber-600);
+}
+
+body[data-theme="v3"] .app-subtitle {
+  color: var(--v3-ink-500);
+}
+
+body[data-theme="v3"] .app-footer {
+  border-top-color: var(--v3-line);
+}
+
+body[data-theme="v3"] .footer-text {
+  color: var(--v3-ink-300);
+}
+
+/* 提示訊息改成暖色系 */
+body[data-theme="v3"] .auth-required-message {
+  background-color: rgba(107, 148, 184, 0.12);
+  border-color: rgba(107, 148, 184, 0.32);
+  color: #4A6D8C;
+  border-radius: var(--radius-lg);
+}
+
+body[data-theme="v3"] .session-expired-message {
+  background-color: rgba(223, 164, 58, 0.14);
+  border-color: rgba(223, 164, 58, 0.34);
+  color: #9A6E15;
+  border-radius: var(--radius-lg);
+}
+
+/* ============================================================
+   13. 內頁定點覆寫
+   影片庫／播放清單頁裡還有一些寫死的顏色（#667eea、#fee、bootstrap
+   的綠紅徽章…），在奶油底下會顯得很跳，這裡統一收斂。
+   ============================================================ */
+
+/* 卡片型區塊 */
+body[data-theme="v3"] .playlist-detail .player-section,
+body[data-theme="v3"] .videos-section,
+body[data-theme="v3"] .detail-container {
+  background: var(--v3-surface);
+  border: 1px solid var(--v3-line);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
+}
+
+body[data-theme="v3"] .player-placeholder {
+  background: linear-gradient(135deg, #4A3F35 0%, #3D332B 100%);
+  border-radius: var(--radius-lg);
+}
+
+/* 錯誤／重試 */
+body[data-theme="v3"] .error {
+  background: rgba(212, 99, 79, 0.10);
+  color: var(--v3-ink-700);
+  border-radius: var(--radius-lg);
+}
+
+body[data-theme="v3"] .empty {
+  color: var(--v3-ink-500);
+}
+
+body[data-theme="v3"] .btn-retry {
+  background: var(--v3-accent-gradient);
+  color: #fff;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+
+/* 分頁按鈕（部分頁面用自己 scoped 的 .btn，是紫藍色） */
+body[data-theme="v3"] .pagination .btn,
+body[data-theme="v3"] .pagination button {
+  background: var(--v3-surface);
+  border: 1px solid var(--v3-line);
+  color: var(--v3-ink-700);
+  border-radius: var(--radius-full);
+}
+
+body[data-theme="v3"] .pagination .btn:hover:not(:disabled),
+body[data-theme="v3"] .pagination button:hover:not(:disabled) {
+  background: var(--v3-cream-200);
+  border-color: var(--v3-cream-400);
+}
+
+body[data-theme="v3"] .pagination .btn:disabled,
+body[data-theme="v3"] .pagination button:disabled {
+  background: var(--v3-cream-200);
+  color: var(--v3-ink-300);
+  border-color: var(--v3-line);
+}
+
+/* 狀態徽章 */
+body[data-theme="v3"] .status.active {
+  background: rgba(111, 168, 107, 0.16);
+  color: #4E7C4B;
+}
+
+body[data-theme="v3"] .status.inactive {
+  background: rgba(212, 99, 79, 0.14);
+  color: #A8462F;
+}
+
+body[data-theme="v3"] .system-badge {
+  background: rgba(224, 141, 90, 0.14);
+  color: var(--v3-amber-700);
+}
+
+/* 搜尋列圖示與輸入 */
+body[data-theme="v3"] .search-input {
+  color: var(--v3-ink-900);
+}

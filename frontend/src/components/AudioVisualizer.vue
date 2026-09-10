@@ -12,7 +12,16 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import * as THREE from 'three'
 
 const props = defineProps({
-  isPlaying: { type: Boolean, default: false }
+  isPlaying: { type: Boolean, default: false },
+  // 讓粒子／波形／光環的配色跟著主題走；不傳就是原本的霓虹配色
+  palette: {
+    type: Object,
+    default: () => ({
+      particles: ['#FF3B3B', '#FF6B6B', '#a855f7', '#3B82F6', '#ffffff'],
+      waves: ['#FF3B3B', '#FF6060', '#a855f7', '#3B82F6', '#7c3aed'],
+      rings: ['#FF3B3B', '#a855f7', '#3B82F6']
+    })
+  }
 })
 
 const canvasRef = ref(null)
@@ -56,13 +65,7 @@ function buildParticles() {
   const velocities = new Float32Array(count * 2)  // 存在 userData
   const colors = new Float32Array(count * 3)
 
-  const palette = [
-    new THREE.Color('#FF3B3B'),
-    new THREE.Color('#FF6B6B'),
-    new THREE.Color('#a855f7'),
-    new THREE.Color('#3B82F6'),
-    new THREE.Color('#ffffff'),
-  ]
+  const palette = props.palette.particles.map(hex => new THREE.Color(hex))
 
   for (let i = 0; i < count; i++) {
     positions[i * 3]     = (Math.random() - 0.5) * window.innerWidth * 1.2
@@ -99,7 +102,7 @@ function buildParticles() {
 // ---- 頻譜波形線（正弦疊加模擬） ----
 function buildWaveLines() {
   const waveCount = 5
-  const waveColors = ['#FF3B3B', '#FF6060', '#a855f7', '#3B82F6', '#7c3aed']
+  const waveColors = props.palette.waves
   const waveY = [-60, -30, 0, 30, 60]
   const segments = 128
 
@@ -123,10 +126,11 @@ function buildWaveLines() {
 
 // ---- 發光同心環 ----
 function buildRings() {
+  const ringColors = props.palette.rings
   const ringData = [
-    { r: 80,  color: '#FF3B3B', speed: 0.4 },
-    { r: 150, color: '#a855f7', speed: -0.25 },
-    { r: 230, color: '#3B82F6', speed: 0.18 },
+    { r: 80,  color: ringColors[0], speed: 0.4 },
+    { r: 150, color: ringColors[1], speed: -0.25 },
+    { r: 230, color: ringColors[2], speed: 0.18 },
   ]
 
   for (const { r, color, speed } of ringData) {

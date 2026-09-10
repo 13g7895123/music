@@ -12,7 +12,22 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import * as THREE from 'three'
 
 const props = defineProps({
-  visible: { type: Boolean, default: true }
+  visible: { type: Boolean, default: true },
+  // 讓場景配色跟著主題走；不傳就是原本的霓虹紅／藍／紫
+  palette: {
+    type: Object,
+    default: () => ({
+      particleA: '#FF3B3B',
+      particleB: '#3B82F6',
+      particleC: '#a855f7',
+      torus: '#FF3B3B',
+      torusEmissive: '#FF1A1A',
+      torusInner: '#a855f7',
+      torusInnerEmissive: '#7c3aed',
+      triangle: '#ffffff',
+      light: '#FF3B3B'
+    })
+  }
 })
 
 const containerRef = ref(null)
@@ -48,9 +63,9 @@ function init() {
   const colors = new Float32Array(particleCount * 3)
   const scales = new Float32Array(particleCount)
 
-  const colorA = new THREE.Color('#FF3B3B')   // 紅
-  const colorB = new THREE.Color('#3B82F6')   // 藍
-  const colorC = new THREE.Color('#a855f7')   // 紫
+  const colorA = new THREE.Color(props.palette.particleA)
+  const colorB = new THREE.Color(props.palette.particleB)
+  const colorC = new THREE.Color(props.palette.particleC)
 
   for (let i = 0; i < particleCount; i++) {
     // 球狀分佈
@@ -93,8 +108,8 @@ function init() {
   // --- 中心幾何體：Torus ---
   const torusGeo = new THREE.TorusGeometry(3.5, 0.28, 24, 120)
   const torusMat = new THREE.MeshStandardMaterial({
-    color: '#FF3B3B',
-    emissive: '#FF1A1A',
+    color: props.palette.torus,
+    emissive: props.palette.torusEmissive,
     emissiveIntensity: 1.2,
     metalness: 0.6,
     roughness: 0.2,
@@ -105,8 +120,8 @@ function init() {
   // 內層小圓環（對比色）
   const torusInnerGeo = new THREE.TorusGeometry(1.8, 0.12, 16, 80)
   const torusInnerMat = new THREE.MeshStandardMaterial({
-    color: '#a855f7',
-    emissive: '#7c3aed',
+    color: props.palette.torusInner,
+    emissive: props.palette.torusInnerEmissive,
     emissiveIntensity: 1.5,
     metalness: 0.7,
     roughness: 0.1,
@@ -122,7 +137,7 @@ function init() {
   triShape.lineTo(-0.95, -0.55)
   triShape.closePath()
   const triGeo = new THREE.ShapeGeometry(triShape)
-  const triMat = new THREE.MeshBasicMaterial({ color: '#ffffff', side: THREE.DoubleSide, transparent: true, opacity: 0.92 })
+  const triMat = new THREE.MeshBasicMaterial({ color: props.palette.triangle, side: THREE.DoubleSide, transparent: true, opacity: 0.92 })
   const triangle = new THREE.Mesh(triGeo, triMat)
   triangle.position.x = 0.15
   scene.add(triangle)
@@ -130,7 +145,7 @@ function init() {
   // 光源
   const ambient = new THREE.AmbientLight(0xffffff, 0.3)
   scene.add(ambient)
-  pointLight = new THREE.PointLight('#FF3B3B', 4, 30)
+  pointLight = new THREE.PointLight(props.palette.light, 4, 30)
   pointLight.position.set(0, 0, 8)
   scene.add(pointLight)
   const blueLight = new THREE.PointLight('#3B82F6', 3, 25)

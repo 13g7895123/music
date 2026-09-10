@@ -7,6 +7,9 @@
 /* Import Button and Form Styles */
 @import './assets/button-styles.css';
 
+/* Import V3 Theme (暖陽奶油) - 只在 [data-theme="v3"] 底下生效 */
+@import './assets/theme-v3.css';
+
 /* CSS Reset and Base Styles */
 * {
   margin: 0;
@@ -20,7 +23,6 @@
   --secondary-color: var(--color-neutral-800);
   --text-color: var(--text-primary);
   --bg-color: var(--bg-primary);
-  --border-color: var(--border-color);
   --error-color: var(--color-error);
   --success-color: var(--color-success);
 }

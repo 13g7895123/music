@@ -1,65 +1,160 @@
 <template>
-  <button
-    class="theme-toggle"
-    @click="toggle"
-    :title="isV2 ? '切換到舊版介面' : '切換到新版介面 (深色)'"
-    :aria-label="isV2 ? '切換到舊版介面' : '切換到新版介面'"
+  <div
+    class="theme-toggle-group"
+    role="radiogroup"
+    aria-label="介面主題"
   >
-    <svg v-if="isV2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="toggle-svg">
-      <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-      <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-    </svg>
-    <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="toggle-svg">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-    </svg>
-    <span class="toggle-label">{{ isV2 ? '舊版' : '新版' }}</span>
-  </button>
+    <button
+      v-for="option in options"
+      :key="option.value"
+      class="theme-option"
+      :class="{ active: theme === option.value }"
+      role="radio"
+      :aria-checked="theme === option.value"
+      :title="option.title"
+      :aria-label="option.title"
+      @click="setTheme(option.value)"
+    >
+      <!-- v3 暖陽奶油 -->
+      <svg
+        v-if="option.value === 'v3'"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="toggle-svg"
+      >
+        <path d="M12 3v1.5M12 19.5V21M3 12h1.5M19.5 12H21M5.6 5.6l1.1 1.1M17.3 17.3l1.1 1.1M18.4 5.6l-1.1 1.1M6.7 17.3l-1.1 1.1" />
+        <circle
+          cx="12"
+          cy="12"
+          r="4.2"
+        />
+      </svg>
+      <!-- v2 深色 -->
+      <svg
+        v-else-if="option.value === 'v2'"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="toggle-svg"
+      >
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+      </svg>
+      <!-- v1 舊版 -->
+      <svg
+        v-else
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="toggle-svg"
+      >
+        <rect
+          x="3"
+          y="4"
+          width="18"
+          height="14"
+          rx="2"
+        />
+        <path d="M8 21h8M12 18v3" />
+      </svg>
+      <span class="toggle-label">{{ option.label }}</span>
+    </button>
+  </div>
 </template>
 
 <script setup>
-import { inject } from 'vue'
+import { inject, computed, ref } from 'vue'
 
-const { isV2, toggle } = inject('theme')
+const injected = inject('theme', null)
+
+// 舊版只提供 { isV2, toggle }，這裡做個保底，元件單獨使用時不會壞掉
+const theme = computed(() => {
+  if (injected?.theme) return injected.theme.value
+  return injected?.isV2?.value ? 'v2' : 'v1'
+})
+
+const setTheme = injected?.setTheme ?? injected?.toggle ?? (() => {})
+
+const options = ref([
+  { value: 'v3', label: '奶油', title: '暖陽奶油（新版）' },
+  { value: 'v2', label: '深色', title: 'OLED 深色' },
+  { value: 'v1', label: '經典', title: '經典舊版' }
+])
 </script>
 
 <style scoped>
-.theme-toggle {
-  display: flex;
+.theme-toggle-group {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
+  gap: 2px;
+  padding: 3px;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-color);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  white-space: nowrap;
+  background: var(--bg-secondary);
 }
 
-.theme-toggle:hover {
-  background: var(--bg-tertiary);
+.theme-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.theme-option:hover:not(.active) {
   color: var(--text-primary);
-  border-color: var(--border-color-hover);
+  background: var(--bg-tertiary);
+}
+
+.theme-option.active {
+  background: var(--bg-primary);
+  color: var(--color-brand-primary);
+  box-shadow: var(--shadow-xs);
 }
 
 .toggle-svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
 }
 
-@media (max-width: 480px) {
+/* 中等寬度：只有選中的那個留文字 */
+@media (max-width: 900px) {
+  .theme-option:not(.active) .toggle-label {
+    display: none;
+  }
+  .theme-option:not(.active) {
+    padding: 5px 8px;
+  }
+}
+
+/* 窄螢幕：全部只留圖示 */
+@media (max-width: 560px) {
   .toggle-label {
     display: none;
   }
-
-  .theme-toggle {
-    padding: 6px 10px;
+  .theme-option,
+  .theme-option:not(.active) {
+    padding: 5px 8px;
   }
 }
 </style>

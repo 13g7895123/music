@@ -1,16 +1,47 @@
 <template>
-  <div id="app" :data-theme="isV2 ? 'v2' : undefined" :class="{ 'theme-v2': isV2 }">
-    <nav class="navbar" :class="{ 'navbar-v2': isV2 }">
+  <div
+    id="app"
+    :data-theme="theme === 'v1' ? undefined : theme"
+    :class="{ 'theme-v2': isV2, 'theme-v3': isV3 }"
+  >
+    <nav
+      class="navbar"
+      :class="{ 'navbar-v2': isV2 }"
+    >
       <div class="nav-container">
-        <router-link to="/" class="nav-brand">
-          <img src="@/assets/images/icon.png" alt="YouTube Loop Player" class="brand-icon-img" />
+        <router-link
+          to="/"
+          class="nav-brand"
+        >
+          <img
+            src="@/assets/images/icon.png"
+            alt="YouTube Loop Player"
+            class="brand-icon-img"
+          >
           <span class="brand-text">YouTube Loop Player</span>
         </router-link>
         <div class="nav-right">
           <div class="nav-links">
-            <router-link to="/" class="nav-link">播放器</router-link>
-            <router-link v-if="authStore.isAuthenticated" to="/library" class="nav-link">影片庫</router-link>
-            <router-link v-if="authStore.isAuthenticated" to="/playlists" class="nav-link">播放清單</router-link>
+            <router-link
+              to="/"
+              class="nav-link"
+            >
+              播放器
+            </router-link>
+            <router-link
+              v-if="authStore.isAuthenticated"
+              to="/library"
+              class="nav-link"
+            >
+              影片庫
+            </router-link>
+            <router-link
+              v-if="authStore.isAuthenticated"
+              to="/playlists"
+              class="nav-link"
+            >
+              播放清單
+            </router-link>
           </div>
           <ThemeToggle />
           <UserMenu />
@@ -18,14 +49,16 @@
       </div>
     </nav>
     <router-view />
-    <FloatingPlayer />
+    <FloatingPlayerV3 v-if="isV3" />
+    <FloatingPlayer v-else />
     <Toast />
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, provide, watch } from 'vue'
+import { onMounted, ref, computed, provide, watch } from 'vue'
 import FloatingPlayer from '@/components/FloatingPlayer.vue'
+import FloatingPlayerV3 from '@/components/FloatingPlayerV3.vue'
 import Toast from '@/components/Toast.vue'
 import UserMenu from '@/components/UserMenu.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
@@ -33,22 +66,37 @@ import { useAuthStore } from '@/stores/auth'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 
 const authStore = useAuthStore()
-const themeStorage = useLocalStorage('yt-loop-theme', 'v2')
-const isV2 = ref(themeStorage.value === 'v2')
 
-function toggle() {
-  isV2.value = !isV2.value
-  themeStorage.value = isV2.value ? 'v2' : 'v1'
+// 主題：v1 舊版淺色 / v2 OLED 深色 / v3 暖陽奶油（預設）
+// 沒有存過偏好的使用者看到 v3；曾經手動選過的維持自己的選擇。
+const THEMES = ['v3', 'v2', 'v1']
+const themeStorage = useLocalStorage('yt-loop-theme', 'v3')
+const theme = ref(THEMES.includes(themeStorage.value) ? themeStorage.value : 'v3')
+
+// isV2 保留給既有 view 的 -v2 class 判斷用，不要移除
+const isV2 = computed(() => theme.value === 'v2')
+const isV3 = computed(() => theme.value === 'v3')
+
+function setTheme(next) {
+  if (!THEMES.includes(next)) return
+  theme.value = next
+  themeStorage.value = next
 }
 
-provide('theme', { isV2, toggle })
+// 依 v3 → v2 → v1 → v3 循環
+function toggle() {
+  const i = THEMES.indexOf(theme.value)
+  setTheme(THEMES[(i + 1) % THEMES.length])
+}
 
-// 同步 body 的 data-theme，讓 Teleport 元件（Toast 等）也能繼承主題
-watch(isV2, (v2) => {
-  if (v2) {
-    document.body.setAttribute('data-theme', 'v2')
-  } else {
+provide('theme', { theme, isV2, isV3, themes: THEMES, setTheme, toggle })
+
+// 同步 body 的 data-theme，讓 Teleport 元件（Toast、播放器等）也能繼承主題
+watch(theme, (value) => {
+  if (value === 'v1') {
     document.body.removeAttribute('data-theme')
+  } else {
+    document.body.setAttribute('data-theme', value)
   }
 }, { immediate: true })
 
@@ -68,6 +116,11 @@ onMounted(async () => {
 /* V2 Inter 字體 */
 .theme-v2 {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* V3 Nunito 圓體 */
+.theme-v3 {
+  font-family: var(--font-family-base);
 }
 
 #app {
