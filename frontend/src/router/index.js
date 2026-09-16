@@ -52,6 +52,12 @@ const routes = [
     name: 'VideoLibrary',
     component: () => import('../views/VideoLibrary.vue'),
     beforeEnter: requireAuth
+  },
+  {
+    path: '/extension',
+    name: 'ExtensionSettings',
+    component: () => import('../views/ExtensionSettings.vue'),
+    beforeEnter: requireAuth
   }
 ]
 

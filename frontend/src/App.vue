@@ -35,6 +35,13 @@
             >
               播放清單
             </router-link>
+            <router-link
+              v-if="authStore.isAuthenticated"
+              to="/extension"
+              class="nav-link"
+            >
+              擴充功能
+            </router-link>
           </div>
           <UserMenu />
         </div>

@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS `videos` (
     `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id` INT(11) UNSIGNED NULL COMMENT '影片擁有者 ID',
-    `video_id` VARCHAR(50) NOT NULL UNIQUE COMMENT 'YouTube 影片 ID',
+    `video_id` VARCHAR(50) NOT NULL COMMENT 'YouTube 影片 ID',
     `title` VARCHAR(255) NOT NULL COMMENT '影片標題',
     `description` TEXT NULL COMMENT '影片描述',
     `duration` INT UNSIGNED NULL COMMENT '影片長度（秒）',
@@ -108,3 +108,22 @@ CREATE TABLE IF NOT EXISTS `playlist_items` (
     CONSTRAINT `fk_playlist_items_playlist` FOREIGN KEY (`playlist_id`) REFERENCES `playlists` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT `fk_playlist_items_video` FOREIGN KEY (`video_id`) REFERENCES `videos` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create user_api_tokens table (瀏覽器擴充功能用的個人 API Token，每位使用者一組)
+CREATE TABLE IF NOT EXISTS `user_api_tokens` (
+    `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id` INT(11) UNSIGNED NOT NULL,
+    `token_hash` CHAR(64) NOT NULL COMMENT 'SHA-256(token)',
+    `token_prefix` VARCHAR(16) NOT NULL COMMENT '顯示用前綴',
+    `last_used_at` DATETIME NULL,
+    `created_at` DATETIME NOT NULL,
+    `updated_at` DATETIME NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `unique_user_id` (`user_id`),
+    UNIQUE KEY `unique_token_hash` (`token_hash`),
+    CONSTRAINT `fk_user_api_tokens_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- videos.video_id 原本是全域 UNIQUE，改為每位使用者各自唯一（不同使用者可收藏同一部影片）
+ALTER TABLE `videos` DROP INDEX IF EXISTS `video_id`;
+ALTER TABLE `videos` ADD UNIQUE KEY IF NOT EXISTS `unique_user_video` (`user_id`, `video_id`);

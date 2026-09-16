@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>YouTube Loop Player</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="header">
+    <img src="icons/icon32.png" alt="" class="logo">
+    <div class="header-text">
+      <strong>YouTube Loop Player</strong>
+      <span id="status" class="status">連線中…</span>
+    </div>
+    <button id="open-options" class="icon-btn" type="button" title="設定" aria-label="設定">
+      <svg viewBox="0 0 24 24"><path d="M19.4 13a7.7 7.7 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.6 7.6 0 0 0-1.7-1l-.4-2.7h-4l-.4 2.7a7.6 7.6 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.7 7.7 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1l.4 2.7h4l.4-2.7c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5L19.4 13ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>
+    </button>
+  </header>
+
+  <main class="body">
+    <section id="unconfigured" class="card" hidden>
+      <p>還沒設定連線。請先到網站的「擴充功能」頁面產生 Token，再到設定頁貼上。</p>
+      <button id="go-options" class="btn primary" type="button">前往設定</button>
+    </section>
+
+    <section id="current" class="card" hidden>
+      <div class="video">
+        <img id="thumb" class="thumb" alt="">
+        <div class="video-meta">
+          <div id="video-title" class="video-title"></div>
+          <div id="video-id" class="video-id"></div>
+        </div>
+      </div>
+      <button id="add-current" class="btn primary" type="button">加入影片庫</button>
+    </section>
+
+    <section id="no-video" class="card muted" hidden>
+      <p>目前分頁不是 YouTube 影片頁。也可以直接貼上網址：</p>
+    </section>
+
+    <section id="manual" class="card" hidden>
+      <form id="manual-form" class="manual">
+        <input id="manual-url" type="text" placeholder="貼上 YouTube 影片網址或 ID" autocomplete="off">
+        <button class="btn secondary" type="submit">加入</button>
+      </form>
+    </section>
+
+    <p id="message" class="message" hidden></p>
+  </main>
+
+  <footer class="footer">
+    <a id="open-library" href="#" target="_blank" rel="noopener">開啟影片庫 ↗</a>
+  </footer>
+
+  <script src="common.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

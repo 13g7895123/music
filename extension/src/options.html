@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>YouTube Loop Player – 擴充功能設定</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <img src="icons/icon128.png" alt="" class="logo">
+      <div>
+        <h1>連線設定</h1>
+        <p>把這個擴充功能連到你的 YouTube Loop Player 帳號，就能在 YouTube 影片頁一鍵加入影片庫。</p>
+      </div>
+    </header>
+
+    <form id="form" class="card">
+      <label class="field">
+        <span class="label">網站網址</span>
+        <input id="site-url" type="url" placeholder="https://free.youtube.mercylife.cc" autocomplete="off" required>
+        <span class="hint">你平常登入 YouTube Loop Player 的網址。</span>
+      </label>
+
+      <label class="field">
+        <span class="label">API Token</span>
+        <div class="token-row">
+          <input id="token" type="password" placeholder="ylp_…" autocomplete="off" spellcheck="false" required>
+          <button id="toggle-token" class="btn ghost" type="button">顯示</button>
+        </div>
+        <span class="hint">登入網站後，到「擴充功能」頁面產生 Token 並複製到這裡。<a id="token-page-link" href="#" target="_blank" rel="noopener" hidden>開啟 Token 頁面 ↗</a></span>
+      </label>
+
+      <div class="actions">
+        <button id="test" class="btn secondary" type="button">測試連線</button>
+        <button id="save" class="btn primary" type="submit">儲存</button>
+      </div>
+
+      <p id="message" class="message" hidden></p>
+    </form>
+
+    <section class="card help">
+      <h2>使用方式</h2>
+      <ol>
+        <li>在網站登入後，點右上角的「擴充功能」，按「產生 Token」。</li>
+        <li>把 Token 貼到上面的欄位，按「儲存」。</li>
+        <li>打開任何 YouTube 影片頁，按鈕列會多一顆「加入影片庫」。</li>
+      </ol>
+      <p class="hint">Token 等同你的登入身分，請勿分享。若外洩，回網站重新產生即可讓舊的失效。</p>
+    </section>
+  </main>
+
+  <script src="common.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

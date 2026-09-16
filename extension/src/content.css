@@ -1,0 +1,51 @@
+.ylp-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  margin-right: 8px;
+  padding: 0 16px 0 12px;
+  border: none;
+  border-radius: 18px;
+  background: #e08d5a;
+  color: #fff;
+  font-family: "Roboto", "Arial", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 36px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.ylp-add-btn:hover:not(:disabled) {
+  background: #c97442;
+}
+
+.ylp-add-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.ylp-add-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.ylp-add-btn[data-state="loading"] {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.ylp-add-btn[data-state="added"] {
+  background: #3f9e6b;
+  cursor: default;
+}
+
+.ylp-add-btn[data-state="unconfigured"] {
+  background: #877565;
+}
+
+.ylp-add-btn[data-state="error"] {
+  background: #c94f4f;
+}

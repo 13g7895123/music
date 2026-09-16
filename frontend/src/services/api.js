@@ -219,6 +219,23 @@ export const videoLibraryService = {
 }
 
 /**
+ * 瀏覽器擴充功能 Token API 服務
+ */
+export const extensionService = {
+  getTokenStatus() {
+    return api.get('/extension/token')
+  },
+
+  generateToken() {
+    return api.post('/extension/token')
+  },
+
+  revokeToken() {
+    return api.delete('/extension/token')
+  },
+}
+
+/**
  * 播放清單 API 服務
  */
 export const playlistService = {

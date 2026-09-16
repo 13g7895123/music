@@ -89,6 +89,26 @@ $routes->group('api', static function ($routes) {
         $routes->post('check', 'Api\VideoController::check');      // 檢查存在
     });
 
+    // 瀏覽器擴充功能路由
+    $routes->group('extension', static function ($routes) {
+        // 個人 API Token 管理（網站登入）
+        $routes->group('token', ['filter' => 'auth'], static function ($routes) {
+            $routes->get('/', 'Api\ExtensionController::tokenStatus');
+            $routes->post('/', 'Api\ExtensionController::generateToken');
+            $routes->delete('/', 'Api\ExtensionController::revokeToken');
+        });
+
+        // 擴充功能呼叫（Authorization: Bearer <token>）
+        $routes->group('', ['filter' => 'apitoken'], static function ($routes) {
+            $routes->get('me', 'Api\ExtensionController::me');
+            $routes->get('videos/check', 'Api\ExtensionController::checkVideo');
+            $routes->post('videos', 'Api\ExtensionController::addVideo');
+        });
+    });
+
+    // CORS preflight：擴充功能是跨來源呼叫，CorsFilter 會在 before 階段直接回 204
+    $routes->options('(:any)', static fn () => null);
+
     // 播放清單路由（需認證）
     $routes->group('playlists', ['filter' => 'auth'], static function ($routes) {
         $routes->get('/', 'Playlists::index');                     // 列表
