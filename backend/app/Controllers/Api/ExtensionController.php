@@ -23,44 +23,101 @@ class ExtensionController extends Controller
     // ========== Token 管理（網站登入後） ==========
 
     /**
-     * GET /api/extension/token
+     * GET /api/extension/tokens
      */
-    public function tokenStatus()
+    public function listTokens()
     {
-        $row = (new UserApiTokenModel())->findByUserId($this->request->userId);
+        $tokens = (new UserApiTokenModel())->listForUser($this->request->userId);
 
         return $this->respond(api_success([
-            'has_token' => $row !== null,
-            'token_prefix' => $row['token_prefix'] ?? null,
-            'created_at' => $row['created_at'] ?? null,
-            'last_used_at' => $row['last_used_at'] ?? null,
+            'tokens' => array_map([self::class, 'formatToken'], $tokens),
+            'max_tokens' => UserApiTokenModel::MAX_TOKENS_PER_USER,
         ]));
     }
 
     /**
-     * POST /api/extension/token — 產生或重新產生，明文 token 只回傳這一次
+     * POST /api/extension/tokens  body: { description }
+     * 明文 token 只回傳這一次
      */
-    public function generateToken()
+    public function createToken()
     {
+        $userId = $this->request->userId;
         $model = new UserApiTokenModel();
-        $token = $model->issueForUser($this->request->userId);
-        $row = $model->findByUserId($this->request->userId);
 
-        return $this->respondCreated(api_success([
-            'token' => $token,
-            'token_prefix' => $row['token_prefix'],
-            'created_at' => $row['created_at'],
-        ], 'Token 已產生', 201));
+        $description = $this->readDescription();
+        if ($description === null) {
+            return $this->fail('請填寫說明（最多 ' . UserApiTokenModel::DESCRIPTION_MAX_LENGTH . ' 字）', 422);
+        }
+
+        if ($model->countForUser($userId) >= UserApiTokenModel::MAX_TOKENS_PER_USER) {
+            return $this->fail('Token 數量已達上限（' . UserApiTokenModel::MAX_TOKENS_PER_USER . ' 組），請先撤銷不用的 Token', 422);
+        }
+
+        [$id, $token] = $model->issueForUser($userId, $description);
+        $row = $model->find($id);
+
+        return $this->respondCreated(api_success(
+            self::formatToken($row) + ['token' => $token],
+            'Token 已產生',
+            201
+        ));
     }
 
     /**
-     * DELETE /api/extension/token
+     * PATCH /api/extension/tokens/{id}  body: { description }
      */
-    public function revokeToken()
+    public function updateToken(int $id)
     {
-        (new UserApiTokenModel())->revokeForUser($this->request->userId);
+        $userId = $this->request->userId;
+        $model = new UserApiTokenModel();
+
+        if (!$model->findForUser($id, $userId)) {
+            return $this->failNotFound('找不到這組 Token');
+        }
+
+        $description = $this->readDescription();
+        if ($description === null) {
+            return $this->fail('請填寫說明（最多 ' . UserApiTokenModel::DESCRIPTION_MAX_LENGTH . ' 字）', 422);
+        }
+
+        $model->update($id, ['description' => $description]);
+
+        return $this->respond(api_success(self::formatToken($model->find($id)), '說明已更新'));
+    }
+
+    /**
+     * DELETE /api/extension/tokens/{id}
+     */
+    public function revokeToken(int $id)
+    {
+        if (!(new UserApiTokenModel())->revokeForUser($id, $this->request->userId)) {
+            return $this->failNotFound('找不到這組 Token');
+        }
 
         return $this->respond(api_success(null, 'Token 已撤銷'));
+    }
+
+    private function readDescription(): ?string
+    {
+        $data = $this->request->getJSON(true) ?? [];
+        $description = trim((string) ($data['description'] ?? ''));
+
+        if ($description === '' || mb_strlen($description) > UserApiTokenModel::DESCRIPTION_MAX_LENGTH) {
+            return null;
+        }
+
+        return $description;
+    }
+
+    private static function formatToken(array $row): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'description' => $row['description'],
+            'token_prefix' => $row['token_prefix'],
+            'created_at' => $row['created_at'],
+            'last_used_at' => $row['last_used_at'],
+        ];
     }
 
     // ========== 擴充功能使用（Bearer token） ==========

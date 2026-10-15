@@ -222,16 +222,20 @@ export const videoLibraryService = {
  * 瀏覽器擴充功能 Token API 服務
  */
 export const extensionService = {
-  getTokenStatus() {
-    return api.get('/extension/token')
+  listTokens() {
+    return api.get('/extension/tokens')
   },
 
-  generateToken() {
-    return api.post('/extension/token')
+  createToken(description) {
+    return api.post('/extension/tokens', { description })
   },
 
-  revokeToken() {
-    return api.delete('/extension/token')
+  updateToken(id, description) {
+    return api.patch(`/extension/tokens/${id}`, { description })
+  },
+
+  revokeToken(id) {
+    return api.delete(`/extension/tokens/${id}`)
   },
 }
 

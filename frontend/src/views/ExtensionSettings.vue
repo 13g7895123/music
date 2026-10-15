@@ -17,18 +17,43 @@
         <div class="card-header">
           <h2>個人 API Token</h2>
           <span
-            v-if="status.has_token"
-            class="badge badge-active"
-          >已啟用</span>
-          <span
-            v-else
             class="badge"
-          >尚未產生</span>
+            :class="{ 'badge-active': tokens.length > 0 }"
+          >{{ tokens.length }} / {{ maxTokens }} 組</span>
         </div>
 
         <p class="description">
           Token 代表你的登入身分，擴充功能會用它把影片加到你的影片庫。
-          每位使用者只有一組，重新產生後舊的會立即失效。
+          每個環境（不同電腦、不同瀏覽器）可以各自產生一組，並寫上說明方便辨認；
+          不再使用的 Token 可以隨時撤銷，撤銷後立即失效，不影響其他組。
+        </p>
+
+        <form
+          class="create-form"
+          @submit.prevent="handleCreate"
+        >
+          <input
+            v-model="newDescription"
+            type="text"
+            class="text-input"
+            :maxlength="DESCRIPTION_MAX"
+            placeholder="說明，例如：公司電腦 Chrome"
+            :disabled="reachedLimit"
+          >
+          <BaseButton
+            type="submit"
+            variant="primary"
+            :loading="creating"
+            :disabled="reachedLimit || !newDescription.trim()"
+          >
+            產生 Token
+          </BaseButton>
+        </form>
+        <p
+          v-if="reachedLimit"
+          class="hint"
+        >
+          已達上限，請先撤銷不用的 Token。
         </p>
 
         <div
@@ -37,10 +62,10 @@
         >
           <p class="token-reveal-title">
             <ExclamationTriangleIcon class="inline-icon" />
-            請現在複製，關閉頁面後就不會再顯示完整 Token。
+            「{{ freshToken.description }}」的 Token：請現在複製，關閉頁面後就不會再顯示完整 Token。
           </p>
           <div class="token-row">
-            <code class="token-value">{{ freshToken }}</code>
+            <code class="token-value">{{ freshToken.token }}</code>
             <BaseButton
               variant="primary"
               size="sm"
@@ -52,41 +77,93 @@
           </div>
         </div>
 
-        <dl
-          v-else-if="status.has_token"
-          class="token-meta"
+        <p
+          v-if="tokens.length === 0"
+          class="empty"
         >
-          <div>
-            <dt>Token</dt>
-            <dd><code>{{ status.token_prefix }}…</code></dd>
-          </div>
-          <div>
-            <dt>產生時間</dt>
-            <dd>{{ formatDate(status.created_at) }}</dd>
-          </div>
-          <div>
-            <dt>最後使用</dt>
-            <dd>{{ status.last_used_at ? formatDate(status.last_used_at) : '尚未使用' }}</dd>
-          </div>
-        </dl>
+          還沒有任何 Token。
+        </p>
 
-        <div class="actions">
-          <BaseButton
-            variant="primary"
-            :loading="working"
-            @click="handleGenerate"
+        <ul
+          v-else
+          class="token-list"
+        >
+          <li
+            v-for="item in tokens"
+            :key="item.id"
+            class="token-item"
           >
-            {{ status.has_token ? '重新產生 Token' : '產生 Token' }}
-          </BaseButton>
-          <BaseButton
-            v-if="status.has_token"
-            variant="outline-secondary"
-            :disabled="working"
-            @click="showRevokeModal = true"
-          >
-            撤銷 Token
-          </BaseButton>
-        </div>
+            <div class="token-item-main">
+              <form
+                v-if="editingId === item.id"
+                class="edit-form"
+                @submit.prevent="handleSaveDescription(item)"
+              >
+                <input
+                  ref="editInput"
+                  v-model="editingDescription"
+                  type="text"
+                  class="text-input"
+                  :maxlength="DESCRIPTION_MAX"
+                  @keydown.esc="cancelEdit"
+                >
+                <BaseButton
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  :loading="savingId === item.id"
+                  :disabled="!editingDescription.trim()"
+                >
+                  儲存
+                </BaseButton>
+                <BaseButton
+                  variant="ghost"
+                  size="sm"
+                  @click="cancelEdit"
+                >
+                  取消
+                </BaseButton>
+              </form>
+              <div
+                v-else
+                class="token-title"
+              >
+                <span class="token-desc">{{ item.description || '（未命名）' }}</span>
+                <button
+                  type="button"
+                  class="icon-button"
+                  title="編輯說明"
+                  @click="startEdit(item)"
+                >
+                  <PencilSquareIcon class="inline-icon" />
+                </button>
+              </div>
+
+              <dl class="token-meta">
+                <div>
+                  <dt>Token</dt>
+                  <dd><code>{{ item.token_prefix }}…</code></dd>
+                </div>
+                <div>
+                  <dt>產生時間</dt>
+                  <dd>{{ formatDate(item.created_at) }}</dd>
+                </div>
+                <div>
+                  <dt>最後使用</dt>
+                  <dd>{{ item.last_used_at ? formatDate(item.last_used_at) : '尚未使用' }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <BaseButton
+              variant="outline-secondary"
+              size="sm"
+              @click="revokeTarget = item"
+            >
+              撤銷
+            </BaseButton>
+          </li>
+        </ul>
       </section>
 
       <section class="card">
@@ -98,7 +175,7 @@
           <li>
             打開擴充功能的設定頁，網站網址填 <code>{{ siteUrl }}</code>。
           </li>
-          <li>把上面產生的 Token 貼進去，按「儲存」。</li>
+          <li>把為這個環境產生的 Token 貼進去，按「儲存」。</li>
           <li>到任何 YouTube 影片頁，按鈕列會多一顆「加入影片庫」。</li>
         </ol>
       </section>
@@ -107,9 +184,9 @@
     <Teleport to="body">
       <Transition name="modal">
         <div
-          v-if="showRevokeModal"
+          v-if="revokeTarget"
           class="modal-overlay"
-          @click="showRevokeModal = false"
+          @click="revokeTarget = null"
         >
           <div
             class="modal"
@@ -120,18 +197,21 @@
               <h2>撤銷 Token</h2>
             </div>
             <div class="modal-body">
-              <p>撤銷後，已設定這組 Token 的擴充功能將無法再加入影片。確定要撤銷嗎？</p>
+              <p>
+                撤銷「{{ revokeTarget.description }}」（<code>{{ revokeTarget.token_prefix }}…</code>）後，
+                使用這組 Token 的擴充功能將無法再加入影片，其他 Token 不受影響。確定要撤銷嗎？
+              </p>
             </div>
             <div class="modal-footer">
               <BaseButton
                 variant="secondary"
-                @click="showRevokeModal = false"
+                @click="revokeTarget = null"
               >
                 取消
               </BaseButton>
               <BaseButton
                 variant="danger"
-                :loading="working"
+                :loading="revoking"
                 @click="handleRevoke"
               >
                 確認撤銷
@@ -145,75 +225,132 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import {
   PuzzlePieceIcon,
   ClipboardDocumentIcon,
   CheckIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  PencilSquareIcon
 } from '@heroicons/vue/24/outline'
 import { extensionService } from '@/services/api'
 import { useToast } from '@/composables/useToast'
 import BaseButton from '@/components/BaseButton.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
+const DESCRIPTION_MAX = 100
+
 const toast = useToast()
 
 const loading = ref(true)
-const working = ref(false)
-const status = ref({ has_token: false, token_prefix: null, created_at: null, last_used_at: null })
-const freshToken = ref('')
+const tokens = ref([])
+const maxTokens = ref(20)
+const newDescription = ref('')
+const creating = ref(false)
+const freshToken = ref(null)
 const copied = ref(false)
-const showRevokeModal = ref(false)
+const editingId = ref(null)
+const editingDescription = ref('')
+const editInput = ref(null)
+const savingId = ref(null)
+const revokeTarget = ref(null)
+const revoking = ref(false)
 const siteUrl = window.location.origin
 
-async function fetchStatus() {
+const reachedLimit = computed(() => tokens.value.length >= maxTokens.value)
+
+function errorMessage(error, fallback) {
+  return error.response?.data?.messages?.error || error.response?.data?.message || fallback
+}
+
+async function fetchTokens() {
   try {
-    const response = await extensionService.getTokenStatus()
-    status.value = response.data.data
+    const response = await extensionService.listTokens()
+    tokens.value = response.data.data.tokens
+    maxTokens.value = response.data.data.max_tokens
   } catch (error) {
-    console.error('Failed to load token status:', error)
-    toast.error('無法載入 Token 狀態')
+    console.error('Failed to load tokens:', error)
+    toast.error('無法載入 Token 列表')
   } finally {
     loading.value = false
   }
 }
 
-async function handleGenerate() {
-  working.value = true
+async function handleCreate() {
+  const description = newDescription.value.trim()
+  if (!description) return
+
+  creating.value = true
   try {
-    const response = await extensionService.generateToken()
-    freshToken.value = response.data.data.token
+    const response = await extensionService.createToken(description)
+    freshToken.value = response.data.data
     copied.value = false
-    await fetchStatus()
+    newDescription.value = ''
+    await fetchTokens()
     toast.success('Token 已產生，請立即複製')
   } catch (error) {
-    console.error('Failed to generate token:', error)
-    toast.error('產生 Token 失敗')
+    console.error('Failed to create token:', error)
+    toast.error(errorMessage(error, '產生 Token 失敗'))
   } finally {
-    working.value = false
+    creating.value = false
+  }
+}
+
+async function startEdit(item) {
+  editingId.value = item.id
+  editingDescription.value = item.description
+  await nextTick()
+  editInput.value?.[0]?.focus()
+}
+
+function cancelEdit() {
+  editingId.value = null
+  editingDescription.value = ''
+}
+
+async function handleSaveDescription(item) {
+  const description = editingDescription.value.trim()
+  if (!description) return
+
+  savingId.value = item.id
+  try {
+    const response = await extensionService.updateToken(item.id, description)
+    item.description = response.data.data.description
+    if (freshToken.value?.id === item.id) {
+      freshToken.value.description = item.description
+    }
+    cancelEdit()
+    toast.success('說明已更新')
+  } catch (error) {
+    console.error('Failed to update token:', error)
+    toast.error(errorMessage(error, '更新說明失敗'))
+  } finally {
+    savingId.value = null
   }
 }
 
 async function handleRevoke() {
-  working.value = true
+  const target = revokeTarget.value
+  revoking.value = true
   try {
-    await extensionService.revokeToken()
-    freshToken.value = ''
-    showRevokeModal.value = false
-    await fetchStatus()
+    await extensionService.revokeToken(target.id)
+    if (freshToken.value?.id === target.id) {
+      freshToken.value = null
+    }
+    revokeTarget.value = null
+    await fetchTokens()
     toast.success('Token 已撤銷')
   } catch (error) {
     console.error('Failed to revoke token:', error)
-    toast.error('撤銷 Token 失敗')
+    toast.error(errorMessage(error, '撤銷 Token 失敗'))
   } finally {
-    working.value = false
+    revoking.value = false
   }
 }
 
 async function copyToken() {
   try {
-    await navigator.clipboard.writeText(freshToken.value)
+    await navigator.clipboard.writeText(freshToken.value.token)
     copied.value = true
     setTimeout(() => { copied.value = false }, 2000)
   } catch {
@@ -226,7 +363,7 @@ function formatDate(value) {
   return new Date(value.replace(' ', 'T')).toLocaleString('zh-TW')
 }
 
-onMounted(fetchStatus)
+onMounted(fetchTokens)
 </script>
 
 <style scoped>
@@ -364,10 +501,89 @@ onMounted(fetchStatus)
   font-weight: 600;
 }
 
-.actions {
+.create-form,
+.edit-form {
   display: flex;
   gap: var(--space-3);
+  align-items: center;
   flex-wrap: wrap;
+}
+
+.text-input {
+  flex: 1;
+  min-width: 200px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--cream-50);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--amber-400);
+}
+
+.hint,
+.empty {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.token-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.token-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.token-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.token-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.token-desc {
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.icon-button {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: var(--cream-200);
+  color: var(--text-primary);
 }
 
 .steps {
@@ -442,6 +658,10 @@ code {
 
   .card {
     padding: var(--space-4);
+  }
+
+  .token-item {
+    flex-direction: column;
   }
 }
 </style>

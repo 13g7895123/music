@@ -92,10 +92,11 @@ $routes->group('api', static function ($routes) {
     // 瀏覽器擴充功能路由
     $routes->group('extension', static function ($routes) {
         // 個人 API Token 管理（網站登入）
-        $routes->group('token', ['filter' => 'auth'], static function ($routes) {
-            $routes->get('/', 'Api\ExtensionController::tokenStatus');
-            $routes->post('/', 'Api\ExtensionController::generateToken');
-            $routes->delete('/', 'Api\ExtensionController::revokeToken');
+        $routes->group('tokens', ['filter' => 'auth'], static function ($routes) {
+            $routes->get('/', 'Api\ExtensionController::listTokens');
+            $routes->post('/', 'Api\ExtensionController::createToken');
+            $routes->patch('(:num)', 'Api\ExtensionController::updateToken/$1');
+            $routes->delete('(:num)', 'Api\ExtensionController::revokeToken/$1');
         });
 
         // 擴充功能呼叫（Authorization: Bearer <token>）

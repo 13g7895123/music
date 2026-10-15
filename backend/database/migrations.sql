@@ -109,17 +109,18 @@ CREATE TABLE IF NOT EXISTS `playlist_items` (
     CONSTRAINT `fk_playlist_items_video` FOREIGN KEY (`video_id`) REFERENCES `videos` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create user_api_tokens table (瀏覽器擴充功能用的個人 API Token，每位使用者一組)
+-- Create user_api_tokens table (瀏覽器擴充功能用的個人 API Token，每位使用者可有多組)
 CREATE TABLE IF NOT EXISTS `user_api_tokens` (
     `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id` INT(11) UNSIGNED NOT NULL,
+    `description` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '使用者自填說明',
     `token_hash` CHAR(64) NOT NULL COMMENT 'SHA-256(token)',
     `token_prefix` VARCHAR(16) NOT NULL COMMENT '顯示用前綴',
     `last_used_at` DATETIME NULL,
     `created_at` DATETIME NOT NULL,
     `updated_at` DATETIME NULL,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_user_id` (`user_id`),
+    KEY `idx_user_id` (`user_id`),
     UNIQUE KEY `unique_token_hash` (`token_hash`),
     CONSTRAINT `fk_user_api_tokens_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

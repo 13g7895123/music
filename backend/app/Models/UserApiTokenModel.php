@@ -7,6 +7,8 @@ use CodeIgniter\Model;
 class UserApiTokenModel extends Model
 {
     public const TOKEN_PREFIX = 'ylp_';
+    public const MAX_TOKENS_PER_USER = 20;
+    public const DESCRIPTION_MAX_LENGTH = 100;
 
     protected $table = 'user_api_tokens';
     protected $primaryKey = 'id';
@@ -16,6 +18,7 @@ class UserApiTokenModel extends Model
     protected $protectFields = true;
     protected $allowedFields = [
         'user_id',
+        'description',
         'token_hash',
         'token_prefix',
         'last_used_at',
@@ -26,9 +29,25 @@ class UserApiTokenModel extends Model
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
 
-    public function findByUserId(int $userId): ?array
+    /**
+     * 列出使用者的所有 token（不含雜湊）
+     */
+    public function listForUser(int $userId): array
     {
-        return $this->where('user_id', $userId)->first();
+        return $this->select('id, description, token_prefix, last_used_at, created_at')
+            ->where('user_id', $userId)
+            ->orderBy('id', 'DESC')
+            ->findAll();
+    }
+
+    public function findForUser(int $id, int $userId): ?array
+    {
+        return $this->where('id', $id)->where('user_id', $userId)->first();
+    }
+
+    public function countForUser(int $userId): int
+    {
+        return $this->where('user_id', $userId)->countAllResults();
     }
 
     public function findByToken(string $token): ?array
@@ -37,31 +56,30 @@ class UserApiTokenModel extends Model
     }
 
     /**
-     * 產生（或重新產生）使用者的 token，回傳明文 token，僅此一次可見
+     * 為使用者新增一組 token，回傳 [id, 明文 token]，明文僅此一次可見
      */
-    public function issueForUser(int $userId): string
+    public function issueForUser(int $userId, string $description): array
     {
         $token = self::TOKEN_PREFIX . bin2hex(random_bytes(20));
-        $data = [
+        $id = $this->insert([
             'user_id' => $userId,
+            'description' => $description,
             'token_hash' => self::hashToken($token),
             'token_prefix' => substr($token, 0, 12),
             'last_used_at' => null,
-        ];
+        ]);
 
-        $existing = $this->findByUserId($userId);
-        if ($existing) {
-            $this->update($existing['id'], $data);
-        } else {
-            $this->insert($data);
-        }
-
-        return $token;
+        return [(int) $id, $token];
     }
 
-    public function revokeForUser(int $userId): void
+    /**
+     * 撤銷使用者自己的某一組 token，回傳是否有刪到
+     */
+    public function revokeForUser(int $id, int $userId): bool
     {
-        $this->where('user_id', $userId)->delete();
+        $this->where('id', $id)->where('user_id', $userId)->delete();
+
+        return $this->db->affectedRows() > 0;
     }
 
     public function touchLastUsed(array $row): void
