@@ -92,9 +92,8 @@ project-root/
 │   │   ├── Models/                ← 9 個資料模型
 │   │   ├── Config/                ← CI4 設定（Routes、CORS、JWT 等）
 │   │   ├── Filters/               ← AuthFilter、CorsFilter
-│   │   └── Helpers/               ← JwtHelper、response_helper
-│   └── database/
-│       └── migrations.sql         ← 初始化 SQL
+│   │   ├── Helpers/               ← JwtHelper、response_helper
+│   │   └── Database/Migrations/   ← 資料庫 migration（容器啟動時自動執行）
 │
 └── frontend/                      ← Vue.js 3 + Vite
     ├── src/

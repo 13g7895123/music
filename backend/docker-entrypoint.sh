@@ -25,14 +25,10 @@ done
 
 echo "Database is ready!"
 
-# 執行 migrations
+# 執行資料庫 migration（CI4 只會跑尚未執行過的檔案）
 echo "Running database migrations..."
-if [ -f /var/www/html/database/migrations.sql ]; then
-    mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" --skip-ssl "$DB_NAME" < /var/www/html/database/migrations.sql 2>&1
-    echo "✅ Migrations completed successfully!"
-else
-    echo "⚠️  Migration file not found, skipping..."
-fi
+cd /var/www/html
+php spark migrate
 
 # 啟動 CodeIgniter 4 應用程式
 echo "Starting CodeIgniter 4 with Spark..."

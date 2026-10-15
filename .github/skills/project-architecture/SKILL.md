@@ -144,7 +144,7 @@ Docker nginx
 ### 資料庫
 
 - MariaDB 10.6
-- 初始化 SQL 來自 `backend/database/migrations.sql`
+- Schema 由 `backend/app/Database/Migrations/` 管理，backend 容器啟動時自動執行 `php spark migrate`（只跑尚未執行的檔案）
 - 對外直連 port 預設綁定 `127.0.0.1:3307`
 
 ---

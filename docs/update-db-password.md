@@ -255,7 +255,7 @@ docker-compose -f docker-compose.prod.yml up -d
 - **環境配置**: `.env.prod`
 - **Docker Compose**: `docker-compose.prod.yml`
 - **部署腳本**: `deploy-prod.sh`
-- **資料庫遷移**: `backend/database/migrations.sql`
+- **資料庫遷移**: `backend/app/Database/Migrations/`
 
 ## 注意事項
 

@@ -102,22 +102,8 @@ if [ "$DB_EXISTS" -eq 0 ]; then
     echo "✅ Database created!"
 fi
 
-# 執行 migrations
-echo "Running database migrations..."
-if [ -f /var/www/html/database/migrations.sql ]; then
-    mysql -h "${MYSQL_HOST:-mariadb}" \
-          -u "${MYSQL_USER:-app_user}" \
-          -p"${MYSQL_PASSWORD}" \
-          --skip-ssl \
-          "${MYSQL_DATABASE:-free_youtube}" < /var/www/html/database/migrations.sql 2>&1
-    echo "✅ Migrations completed successfully!"
-else
-    echo "⚠️  Migration file not found, skipping..."
-fi
-
-# 執行 CodeIgniter 增量 migration（app/Database/Migrations）
+# 執行資料庫 migration（app/Database/Migrations，空資料庫也由這裡建出完整 schema）
 # CI4 會在 migrations 資料表記錄跑過哪些檔案，只執行新增的；沒有新的就什麼都不做。
-# 舊的 migration 都可重複執行（IF NOT EXISTS / fieldExists），既有資料庫第一次跑也不會出錯。
 # 用 appuser 執行，避免以 root 建立 writable/logs 檔案導致 php-fpm 之後寫不進去。
 echo "Running CodeIgniter migrations..."
 cd /var/www/html

@@ -107,7 +107,6 @@ services:
       - "${DB_PORT_EXPOSED:-3307}:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
-      - ../backend/database/migrations.sql:/docker-entrypoint-initdb.d/migrations.sql:ro
     networks:
       - app_network
     healthcheck:
