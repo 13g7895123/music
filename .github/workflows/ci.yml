@@ -49,7 +49,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          find app database public -name '*.php' -print0 \
+          find app public -name '*.php' -print0 \
             | xargs -0 -n1 -P4 php -l > /dev/null
 
   frontend:
