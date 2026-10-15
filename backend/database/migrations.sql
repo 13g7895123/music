@@ -128,3 +128,8 @@ CREATE TABLE IF NOT EXISTS `user_api_tokens` (
 -- videos.video_id 原本是全域 UNIQUE，改為每位使用者各自唯一（不同使用者可收藏同一部影片）
 ALTER TABLE `videos` DROP INDEX IF EXISTS `video_id`;
 ALTER TABLE `videos` ADD UNIQUE KEY IF NOT EXISTS `unique_user_video` (`user_id`, `video_id`);
+
+-- user_api_tokens 改為每位使用者可有多組：補 description 欄位，user_id 改一般索引（FK 需要索引，先加再拿掉 UNIQUE）
+ALTER TABLE `user_api_tokens` ADD COLUMN IF NOT EXISTS `description` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '使用者自填說明' AFTER `user_id`;
+ALTER TABLE `user_api_tokens` ADD INDEX IF NOT EXISTS `idx_user_id` (`user_id`);
+ALTER TABLE `user_api_tokens` DROP INDEX IF EXISTS `unique_user_id`;
