@@ -66,7 +66,7 @@ class CreateLineLoginLogsTable extends Migration
         $this->forge->addKey('session_id');
         $this->forge->addKey('status');
         $this->forge->addKey('created_at');
-        $this->forge->createTable('line_login_logs');
+        $this->forge->createTable('line_login_logs', true);
     }
 
     public function down()

@@ -58,7 +58,7 @@ class CreateLineLoginTables extends Migration
         $this->forge->addUniqueKey('line_user_id');
         $this->forge->addKey('status');
         $this->forge->addKey('deleted_at');
-        $this->forge->createTable('users');
+        $this->forge->createTable('users', true);
 
         // 2. user_tokens 表
         $this->forge->addField([
@@ -122,7 +122,7 @@ class CreateLineLoginTables extends Migration
         $this->forge->addKey('expires_at');
         $this->forge->addKey(['access_token'], false, false, 255);
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('user_tokens');
+        $this->forge->createTable('user_tokens', true);
 
         // 3. video_library 表
         $this->forge->addField([
@@ -172,7 +172,7 @@ class CreateLineLoginTables extends Migration
         $this->forge->addUniqueKey(['user_id', 'video_id']);
         $this->forge->addKey('user_id');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('video_library');
+        $this->forge->createTable('video_library', true);
 
         // 4. playlists 表 - 已在 2025_10_27_000002_CreatePlaylistsTable.php 中定義
         // user_id 欄位將由 2025_11_03_000001_AddUserIdToPlaylistsTable.php 添加
@@ -210,7 +210,7 @@ class CreateLineLoginTables extends Migration
         $this->forge->addKey('id', true);
         $this->forge->addUniqueKey('session_id');
         $this->forge->addKey('expires_at');
-        $this->forge->createTable('guest_sessions');
+        $this->forge->createTable('guest_sessions', true);
     }
 
     public function down()

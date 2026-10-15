@@ -51,7 +51,7 @@ class CreateUserApiTokensTable extends Migration
         $this->forge->addUniqueKey('user_id', 'unique_user_id');
         $this->forge->addUniqueKey('token_hash', 'unique_token_hash');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE', 'fk_user_api_tokens_user_id');
-        $this->forge->createTable('user_api_tokens');
+        $this->forge->createTable('user_api_tokens', true);
     }
 
     public function down()

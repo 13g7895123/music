@@ -85,7 +85,7 @@ class CreateVideosTable extends Migration
         $this->forge->addKey('channel_id');
         $this->forge->addKey('created_at');
 
-        $this->forge->createTable('videos');
+        $this->forge->createTable('videos', true);
     }
 
     public function down()

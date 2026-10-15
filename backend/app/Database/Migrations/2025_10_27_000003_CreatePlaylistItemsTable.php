@@ -49,7 +49,7 @@ class CreatePlaylistItemsTable extends Migration
         $this->forge->addForeignKey('playlist_id', 'playlists', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('video_id', 'videos', 'id', 'CASCADE', 'CASCADE');
 
-        $this->forge->createTable('playlist_items');
+        $this->forge->createTable('playlist_items', true);
     }
 
     public function down()

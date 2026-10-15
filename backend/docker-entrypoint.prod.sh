@@ -115,6 +115,19 @@ else
     echo "⚠️  Migration file not found, skipping..."
 fi
 
+# 執行 CodeIgniter 增量 migration（app/Database/Migrations）
+# CI4 會在 migrations 資料表記錄跑過哪些檔案，只執行新增的；沒有新的就什麼都不做。
+# 舊的 migration 都可重複執行（IF NOT EXISTS / fieldExists），既有資料庫第一次跑也不會出錯。
+# 用 appuser 執行，避免以 root 建立 writable/logs 檔案導致 php-fpm 之後寫不進去。
+echo "Running CodeIgniter migrations..."
+cd /var/www/html
+if su-exec appuser php spark migrate 2>&1; then
+    echo "✅ CodeIgniter migrations up to date!"
+else
+    echo "❌ CodeIgniter migration failed, aborting startup"
+    exit 1
+fi
+
 # 清理舊的緩存
 echo "Cleaning cache..."
 rm -rf /var/www/html/writable/cache/* 2>/dev/null || true

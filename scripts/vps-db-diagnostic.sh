@@ -225,8 +225,8 @@ if [ -n "$MARIADB_CONTAINER" ]; then
             docker exec "$MARIADB_CONTAINER" mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SELECT COUNT(*) as 'Table Count' FROM information_schema.tables WHERE table_schema='$DB_NAME';" 2>&1
             echo ""
 
-            # 檢查 CodeIgniter migrations 是否有落後（migrations.sql 只做初始化，
-            # App/Database/Migrations 底下的增量 migration 不會自動執行）
+            # 檢查 CodeIgniter migrations 是否有落後（backend 容器啟動時會自動執行
+            # php spark migrate；若仍有 Pending，代表啟動時 migrate 失敗，請看 backend log）
             echo "檢查 CodeIgniter migration 狀態:"
             if [ -n "$BACKEND_CONTAINER" ]; then
                 docker exec "$BACKEND_CONTAINER" php spark migrate:status 2>&1 || echo "無法取得 migration 狀態"

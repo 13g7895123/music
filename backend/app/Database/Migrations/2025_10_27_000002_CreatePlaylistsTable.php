@@ -56,7 +56,7 @@ class CreatePlaylistsTable extends Migration
         $this->forge->addKey('is_active');
         $this->forge->addKey('created_at');
 
-        $this->forge->createTable('playlists');
+        $this->forge->createTable('playlists', true);
     }
 
     public function down()
