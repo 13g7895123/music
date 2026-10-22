@@ -221,6 +221,8 @@ docker/envs/.env.<env>
 
 弱值樣式包含 `changeme`、`REPLACE_WITH_*`、`your_*_here`、`password`、`admin`、**空值**等。因此 `LINE_LOGIN_CHANNEL_SECRET=your_channel_secret_here` 這類舊版漏掉的值現在會被偵測到。
 
+另有**長度下限**（`min_secret_length`）：`JWT_SECRET_KEY` 少於 32 字元也視為弱密鑰（firebase/php-jwt 7.x 對 HS256 的硬性要求，過短會導致所有登入失敗）。長度不足時只顯示長度、不印出現值；輪替 JWT 金鑰會讓所有使用者需重新登入一次。
+
 ### 行為
 
 - 同時寫入 `docker/.env` 與 `docker/envs/.env.<env>`，確保下次部署不會重複輪替
@@ -484,7 +486,7 @@ nano docker/envs/.env.production   # 填入強密鑰與真實 LINE 憑證
 ```
 ❌ 發現弱密鑰（--fail-on-weak / 非 TTY 環境）
 ```
-→ 輸出會列出每個弱密鑰的名稱與現值，逐一改為強值後重試
+→ 輸出會列出每個弱密鑰的名稱與現值（長度不足者只列長度），逐一改為強值後重試
 → 本機要快速產生：`./scripts/deploy.sh <env> --auto-secrets`
 
 ### 想強制重新套用 env

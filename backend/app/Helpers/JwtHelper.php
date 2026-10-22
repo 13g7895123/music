@@ -45,6 +45,11 @@ class JwtHelper
                 throw new Exception('JWT_SECRET_KEY 未設置，請在 .env 檔案或環境變數中設置 - Debug: ' . json_encode($debugInfo));
             }
 
+            // firebase/php-jwt 7.x 要求 HS256 金鑰至少 256 bits（32 bytes），過短會拒絕簽發與驗證
+            if (strlen(self::$secretKey) < 32) {
+                throw new Exception('JWT_SECRET_KEY 長度不足：HS256 至少需要 32 字元，目前為 ' . strlen(self::$secretKey) . ' 字元，請用 openssl rand -hex 32 重新產生');
+            }
+
             log_message('debug', 'JWT initialized with secret key successfully');
         }
     }

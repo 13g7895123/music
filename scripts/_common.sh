@@ -147,6 +147,24 @@ is_weak_value() {
   return 1
 }
 
+# min_secret_length <KEY>
+#   回傳該 key 要求的最少字元數，0 表示不檢查長度
+#   JWT_SECRET_KEY：firebase/php-jwt 7.x 要求 HS256 金鑰 >= 256 bits（32 bytes），過短會拒絕簽發與驗證
+min_secret_length() {
+  case "$1" in
+    JWT_SECRET_KEY) echo 32 ;;
+    *)              echo 0 ;;
+  esac
+}
+
+# is_too_short <KEY> <value>
+#   回傳 0 = 長度低於 min_secret_length 要求
+is_too_short() {
+  local min
+  min=$(min_secret_length "$1")
+  [[ "$min" -gt 0 && ${#2} -lt "$min" ]]
+}
+
 # classify_secret_key <KEY>
 #   依 key 名稱回傳類型代碼：password | hex | token | base64 | none
 #   回 none 者不納入密鑰偵測（例如 LINE_LOGIN_CHANNEL_ID 屬設定非密鑰）
@@ -261,7 +279,7 @@ scan_weak_secrets() {
     kind=$(classify_secret_key "$key")
     [[ "$kind" == "none" ]] && continue
 
-    if is_weak_value "$val"; then
+    if is_weak_value "$val" || is_too_short "$key" "$val"; then
       WEAK_SECRETS+=("$key|$kind|$val")
     fi
   done < "$file"
@@ -387,7 +405,12 @@ handle_weak_secrets() {
     rest="${entry#*|}"
     kind="${rest%%|*}"
     val="${rest#*|}"
-    printf "  [%d] %-26s (%s)\n      現值：%s\n" "$i" "$key" "$kind" "$val"
+    if is_weak_value "$val"; then
+      printf "  [%d] %-26s (%s)\n      現值：%s\n" "$i" "$key" "$kind" "$val"
+    else
+      # 長度不足的可能是真實密鑰，只顯示長度不印內容
+      printf "  [%d] %-26s (%s)\n      長度 %d 字元，低於最少 %d 字元\n" "$i" "$key" "$kind" "${#val}" "$(min_secret_length "$key")"
+    fi
     i=$((i + 1))
   done
   echo ""
