@@ -25,7 +25,7 @@ class VideoLibraryModel extends Model
     protected $useTimestamps = true;
     protected $dateFormat = 'datetime';
     protected $createdField = 'created_at';
-    protected $updatedField = null;
+    protected $updatedField = ''; // 資料表無 updated_at；CI 需用空字串停用，null 會產生空欄位名導致 SQL 錯誤
 
     // Validation
     protected $validationRules = [

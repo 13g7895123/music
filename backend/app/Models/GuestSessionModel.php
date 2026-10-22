@@ -22,11 +22,12 @@ class GuestSessionModel extends Model
     protected $useTimestamps = true;
     protected $dateFormat = 'datetime';
     protected $createdField = 'created_at';
-    protected $updatedField = null;
+    protected $updatedField = ''; // 資料表無 updated_at；CI 需用空字串停用，null 會產生空欄位名導致 SQL 錯誤
 
     // Validation
     protected $validationRules = [
-        'session_id' => 'required|max_length[128]|is_unique[guest_sessions.session_id,id,{id}]',
+        'id' => 'permit_empty|is_natural_no_zero', // 供 is_unique 的 {id} 佔位符使用
+        'session_id' =>'required|max_length[128]|is_unique[guest_sessions.session_id,id,{id}]',
         'expires_at' => 'required|valid_date'
     ];
 
@@ -65,7 +66,8 @@ class GuestSessionModel extends Model
         ];
 
         if ($existing) {
-            return $this->update($existing['id'], $data);
+            // is_unique 規則的 {id} 佔位符需從資料取值，否則會把自己判定為重複
+            return $this->update($existing['id'], $data + ['id' => $existing['id']]);
         } else {
             return $this->insert($data);
         }
