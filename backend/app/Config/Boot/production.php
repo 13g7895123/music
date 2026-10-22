@@ -7,7 +7,7 @@
  | Don't show ANY in production environments. Instead, let the system catch
  | it and display a generic error message.
  */
-ini_set('display_errors', '1');
+ini_set('display_errors', '0');
 // E_STRICT 自 PHP 8.0 起已併入其他等級，PHP 8.4 起使用會觸發 Deprecated，故移除
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
 
@@ -19,7 +19,7 @@ error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_USER_NOTICE & ~E_USER_DEP
  | backtraces along with the other error information. If you would
  | prefer to not see this, set this value to false.
  */
-defined('SHOW_DEBUG_BACKTRACE') || define('SHOW_DEBUG_BACKTRACE', true);
+defined('SHOW_DEBUG_BACKTRACE') || define('SHOW_DEBUG_BACKTRACE', false);
 
 /*
  |--------------------------------------------------------------------------
@@ -29,4 +29,4 @@ defined('SHOW_DEBUG_BACKTRACE') || define('SHOW_DEBUG_BACKTRACE', true);
  | the system. This will control whether Kint is loaded, and a few other
  | items. It can always be used within your own application too.
  */
-defined('CI_DEBUG') || define('CI_DEBUG', true);
+defined('CI_DEBUG') || define('CI_DEBUG', false);
