@@ -44,8 +44,8 @@ free_youtube/
 |------|----------|
 | nginx | `APP_PORT`（預設 80） |
 | frontend / backend | 只透過 nginx |
-| phpMyAdmin | `PMA_PORT`（預設 8081，綁 127.0.0.1） |
-| MariaDB | `DB_PORT_EXPOSED`（預設 `127.0.0.1:3307`） |
+| phpMyAdmin | 只透過 nginx `/pma/` |
+| MariaDB | 不對外；經由 phpMyAdmin 或 `docker compose exec mariadb` |
 
 ## 快速開始
 

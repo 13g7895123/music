@@ -604,13 +604,10 @@ kill_port() {
 }
 
 # check_ports
-#   讀取 docker/.env 的 APP_PORT / DB_PORT_EXPOSED 並預檢查
+#   讀取 docker/.env 的 APP_PORT 並預檢查（nginx 為唯一對外 port）
 check_ports() {
-  local app_port db_port
+  local app_port
   app_port="$(env_value APP_PORT | tr -d ' ')"
-  # DB_PORT_EXPOSED 可能是 "127.0.0.1:3307" 或 "3307"，取最後數字部分
-  db_port="$(env_value DB_PORT_EXPOSED | tr -d ' ' | sed 's/.*://')"
 
   kill_port "${app_port:-80}" "APP_PORT" || return 1
-  kill_port "${db_port:-3307}" "DB_PORT_EXPOSED" || return 1
 }

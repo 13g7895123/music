@@ -109,12 +109,11 @@ fi
 log_ok "$ENV 部署完成"
 
 APP_PORT_VAL="$(env_value APP_PORT | tr -d ' ')"
-DB_PORT_VAL="$(env_value DB_PORT_EXPOSED | tr -d ' ' | sed 's/.*://')"
 
 echo ""
 echo "  主應用程式   http://localhost:${APP_PORT_VAL:-80}/"
 echo "  phpMyAdmin  http://localhost:${APP_PORT_VAL:-80}/pma/"
-echo "  資料庫直連   localhost:${DB_PORT_VAL:-3307}  (MariaDB)"
+echo "  資料庫       cd docker && docker compose exec mariadb mariadb -u root -p"
 echo ""
 echo "  查看即時 log：cd docker && docker compose logs -f"
 echo ""

@@ -145,7 +145,7 @@ Docker nginx
 
 - MariaDB 10.6
 - Schema 由 `backend/app/Database/Migrations/` 管理，backend 容器啟動時自動執行 `php spark migrate`（只跑尚未執行的檔案）
-- 對外直連 port 預設綁定 `127.0.0.1:3307`
+- 不對外開 port，經由 phpMyAdmin（`/pma/`）或 `docker compose exec mariadb` 存取
 
 ---
 
@@ -158,7 +158,7 @@ Docker nginx
 | `nginx` | Docker 入口代理 | 對應主機 `${APP_PORT}:80` |
 | `frontend` | Vue SPA 靜態站台 | 僅內部被 nginx 存取 |
 | `backend` | CI4 PHP-FPM | 僅內部以 FastCGI 存取 |
-| `mariadb` | 資料庫 | 對主機暴露 `${DB_PORT_EXPOSED}:3306` |
+| `mariadb` | 資料庫 | 僅內部網路，不對外開 port |
 | `phpmyadmin` | DB 管理介面 | 僅內部被 nginx 的 `/pma/` 存取 |
 
 ### 內部路由規則
@@ -238,7 +238,6 @@ NPM Proxy Host
 | `APP_PORT` | Docker nginx 暴露到主機的 port，NPM 代理目標 |
 | `APP_BASEURL` | 應用程式外部網址 |
 | `APP_FORCE_HTTPS` | 是否強制 HTTPS |
-| `DB_PORT_EXPOSED` | MariaDB 對主機暴露 port |
 | `PMA_ABSOLUTE_URI` | phpMyAdmin 外部 URL |
 | `COOKIE_DOMAIN` | Cookie 網域 |
 
@@ -250,7 +249,7 @@ NPM Proxy Host
 2. 若密碼仍是預設值，則自動產生隨機密碼
 3. 建立 `docker/.env`
 4. 同步 `backend/.env`
-5. 檢查 `APP_PORT` 與 `DB_PORT_EXPOSED` 是否衝突
+5. 檢查 `APP_PORT` 是否衝突（nginx 為唯一對外 port）
 6. 執行 `docker compose up -d --build --remove-orphans`
 
 這代表 NPM 的 Forward Port 必須和目前有效的 `APP_PORT` 一致，否則 NPM 會連錯地方。

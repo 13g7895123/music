@@ -103,8 +103,6 @@ services:
       MYSQL_USER: ${DB_USER:-app_user}
       MYSQL_PASSWORD: ${DB_PASS}
       TZ: ${TZ:-Asia/Taipei}
-    ports:
-      - "${DB_PORT_EXPOSED:-3307}:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     networks:

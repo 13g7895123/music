@@ -158,7 +158,7 @@ cp docker/envs/.env.development.example docker/envs/.env.development
 | 主應用程式（透過 NPM HTTPS） | `https://your-domain.com/` |
 | phpMyAdmin | `https://your-domain.com/pma/` |
 | API | `https://your-domain.com/api/...` |
-| 資料庫（直接，僅本機） | `127.0.0.1:3307` |
+| 資料庫 | `cd docker && docker compose exec mariadb mariadb -u root -p`（不對外開 port） |
 
 ---
 
@@ -187,7 +187,7 @@ docker/envs/.env.<env>
 | 3 | 套用 env | `prepare_env_file`：`docker/envs/.env.<env>` → `docker/.env`（**每次強制覆寫**）。來源不存在則報錯並提示 `cp` 指令 |
 | 4 | **密鑰偵測** | `handle_weak_secrets`：依模式中止／輪替／跳過 |
 | 5 | 同步 backend/.env | `sync_backend_env`（在輪替**之後**，確保帶入新密鑰） |
-| 6 | Port 預檢查 | `APP_PORT` / `DB_PORT_EXPOSED`：本專案容器 → 允許繼續；其他程序 → `kill -9` 後確認釋放（最多等 5 秒） |
+| 6 | Port 預檢查 | `APP_PORT`（唯一對外 port）：本專案容器 → 允許繼續；其他程序 → `kill -9` 後確認釋放（最多等 5 秒） |
 | 7 | docker compose | `pull` → `build` → `up -d --remove-orphans` |
 
 > **改為「每次強制覆寫 docker/.env」**：舊版「存在則不複製」會讓 `.env.<env>` 的變更永遠不生效。現在 `docker/envs/.env.<env>` 是唯一真實來源，要改設定就改它。
@@ -259,7 +259,6 @@ docker compose exec mariadb mariadb -uroot -p -e \
 | `DB_USER` | MariaDB 使用者 | `app_user` |
 | `DB_PASS` | MariaDB 使用者密碼 | **deploy.sh 自動產生** |
 | `MYSQL_ROOT_PASSWORD` | MariaDB root 密碼 | **deploy.sh 自動產生** |
-| `DB_PORT_EXPOSED` | MariaDB 對外 port | `127.0.0.1:3307` |
 | `AUTH_MODE` | 認證模式（`line` / `mock`） | `line` |
 | `LINE_LOGIN_CHANNEL_ID` | LINE Login Channel ID | 必填 |
 | `LINE_LOGIN_CHANNEL_SECRET` | LINE Login Channel Secret | 必填 |
@@ -457,7 +456,7 @@ nano docker/envs/.env.production   # 填入強密鑰與真實 LINE 憑證
 ## 新增環境（如 staging）
 
 1. `cp docker/envs/.env.production.example docker/envs/.env.staging.example`
-2. 調整 `APP_PORT` / `DB_PORT_EXPOSED` 避免衝突
+2. 調整 `APP_PORT` 避免衝突
 3. `deploy.yml` 的 `workflow_dispatch.inputs.options` 加入 `staging`
 4. 伺服器建立 `docker/envs/.env.staging`
 5. `./scripts/deploy.sh staging`
