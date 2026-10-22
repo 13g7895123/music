@@ -112,7 +112,7 @@ Docker nginx
 | `docker/nginx/frontend.conf` | Vue SPA 的 nginx 設定與快取策略 |
 | `scripts/deploy.sh` | 正式/開發部署、env 同步、密碼輪替、port 衝突檢查 |
 | `.github/workflows/deploy.yml` | GitHub Actions 經 SSH 執行 `scripts/deploy.sh production` |
-| `backend/composer.json` | CodeIgniter 4 / PHP 8.1 / firebase php-jwt 依賴 |
+| `backend/composer.json` | CodeIgniter 4 / PHP 8.4 / firebase php-jwt 依賴 |
 | `frontend/package.json` | Vue 3 / Vite / Pinia / Vue Router / Vitest / Playwright 工具鏈 |
 
 ---
@@ -133,7 +133,7 @@ Docker nginx
 
 ### 後端
 
-- PHP 8.1+
+- PHP 8.4+
 - CodeIgniter 4
 - Firebase PHP-JWT
 - LINE Login

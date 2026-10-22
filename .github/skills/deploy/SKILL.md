@@ -85,7 +85,7 @@ project-root/
 │   └── workflows/
 │       └── deploy.yml             ← CD：SSH 部署到伺服器
 │
-├── backend/                       ← CodeIgniter 4 (PHP 8.1+)
+├── backend/                       ← CodeIgniter 4 (PHP 8.4+)
 │   ├── Dockerfile.prod            ← PHP-FPM alpine
 │   ├── app/
 │   │   ├── Controllers/           ← HTTP 控制器

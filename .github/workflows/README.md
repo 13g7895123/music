@@ -33,7 +33,7 @@ PR 與 master push 的守門機制，確保 master 永遠可部署。三個 job 
 
 | Job | 內容 |
 | --- | --- |
-| `backend` | PHP 8.1、composer validate/install、對 `app` `database` `public` 跑 `php -l` |
+| `backend` | PHP 8.4、composer validate/install、對 `app` `database` `public` 跑 `php -l` |
 | `frontend` | bun 1.3.2、`bun install --frozen-lockfile`、`bun run lint`、`bun run build` |
 | `compose` | 以 `.env.production.example` 驗證 `docker compose config` 可解析 |
 

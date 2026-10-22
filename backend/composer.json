@@ -3,7 +3,7 @@
     "description": "CodeIgniter4 starter app",
     "license": "MIT",
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.4",
         "codeigniter4/framework": "^4.4",
         "firebase/php-jwt": "^6.10"
     },
