@@ -68,6 +68,12 @@ $routes->group('api', static function ($routes) {
         $routes->delete('(:segment)', 'VideoLibrary::remove/$1');   // 移除影片
     });
 
+    // 公開展示頁設定（需認證）
+    $routes->group('public-page', ['filter' => 'auth'], static function ($routes) {
+        $routes->get('settings', 'Api\PublicPageSettingsController::show');
+        $routes->put('settings', 'Api\PublicPageSettingsController::update');
+    });
+
     // 通知路由（公開，不需認證）
     $routes->group('notifications', static function ($routes) {
         $routes->post('/', 'Notification::create');                         // 建立通知
@@ -124,6 +130,11 @@ $routes->group('api', static function ($routes) {
         $routes->put('(:num)/reorder', 'Playlists::reorder/$1');                    // 重新排序
     });
 });
+
+// 對外公開展示頁（開關與 IP 白名單由 /api/public-page/settings 管理）
+// 必須在下面的 SPA catch-all 之前註冊
+$routes->get('showcase', 'Showcase::show');
+$routes->get('showcase/image', 'Showcase::image');
 
 // 前端 SPA 路由 - 所有未匹配的路由重導到 index.html
 $routes->get('/', 'Home::index');

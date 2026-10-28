@@ -27,6 +27,11 @@ export default defineConfig({
         target: 'http://localhost:9204',  // ✅ 修正為實際的 backend 端口
         changeOrigin: true,
         secure: false  // 允許非 HTTPS 連接
+      },
+      '/showcase': {
+        target: 'http://localhost:9204',
+        changeOrigin: true,
+        secure: false
       }
     }
   }

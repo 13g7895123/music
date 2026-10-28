@@ -171,6 +171,32 @@ GitHub Actions 有兩條 pipeline：
 - ✅ 搜尋與篩選
 - ✅ 響應式設計
 
+## 公開展示頁（/showcase）
+
+提供一個對外公開的圖片頁，供 NPM 代理或直接分享：
+
+| 路徑 | 說明 |
+| --- | --- |
+| `GET /showcase` | 圖片展示頁 |
+| `GET /showcase/image` | PNG 原圖（與頁面共用同一組檢查） |
+| `GET/PUT /api/public-page/settings` | 讀寫設定（需登入） |
+
+- 設定入口：登入後點導覽列的「展示頁」（`/showcase-settings`）。
+- 可切換開關；關閉時上述兩個公開路徑都回 `404`。
+- 來源 IP 白名單支援 IPv4 / IPv6 與 CIDR，每行一筆；留空表示不限來源。
+  不在白名單的請求回 `403`。
+- IP 判斷使用 `X-Forwarded-For` 的真實訪客 IP（CI4 的 `proxyIPs` 已信任內網代理，
+  取標頭中最左側的值）。NPM 需保留/轉發此標頭；若前面還有 Cloudflare，
+  Cloudflare 預設會帶入訪客 IP。
+  > ⚠️ 若最前面沒有 Cloudflare 之類會覆寫此標頭的服務，訪客可自行偽造
+  > `X-Forwarded-For` 繞過白名單。此白名單適合擋掉一般掃描與誤觸，不是強認證。
+- 圖片檔案：`backend/resources/showcase/261023_v1.png`（隨 backend image 一起部署）。
+- **NPM 設定**：把 `/showcase` 與 `/showcase/image` 代理到本專案的 `APP_PORT`
+  （或整個網域代理），路徑需保留，不要改寫成 `/`。
+
+> 首次部署會由 migration 建立 `public_page_settings`，預設為**開啟、不限來源**。
+> 若只想讓特定 IP 瀏覽，請先到設定頁填入白名單。
+
 ## 開發指南
 
 詳見 `/specs/002-playlist-database/` 中的規劃文件：

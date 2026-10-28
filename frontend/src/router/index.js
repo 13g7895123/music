@@ -58,6 +58,12 @@ const routes = [
     name: 'ExtensionSettings',
     component: () => import('../views/ExtensionSettings.vue'),
     beforeEnter: requireAuth
+  },
+  {
+    path: '/showcase-settings',
+    name: 'ShowcaseSettings',
+    component: () => import('../views/ShowcaseSettings.vue'),
+    beforeEnter: requireAuth
   }
 ]
 

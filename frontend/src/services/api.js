@@ -304,4 +304,17 @@ export const playlistService = {
   },
 }
 
+/**
+ * 公開展示頁設定 API
+ */
+export const publicPageService = {
+  getSettings() {
+    return api.get('/public-page/settings')
+  },
+
+  updateSettings({ is_enabled, allowed_ips }) {
+    return api.put('/public-page/settings', { is_enabled, allowed_ips })
+  },
+}
+
 export default api

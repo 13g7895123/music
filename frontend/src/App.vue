@@ -42,6 +42,13 @@
             >
               擴充功能
             </router-link>
+            <router-link
+              v-if="authStore.isAuthenticated"
+              to="/showcase-settings"
+              class="nav-link"
+            >
+              展示頁
+            </router-link>
           </div>
           <UserMenu />
         </div>
