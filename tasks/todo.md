@@ -41,6 +41,27 @@
   再丟進自家格式化函式，回應變成「預設值」的扁平陣列。已改名 `presentSettings()` 並補
   `protected $format = 'json'`。
 
+## 後續調整（2026-10-28）
+- [x] 展示頁背景改為純白 `#ffffff`，移除徑向漸層、陰影與圓角
+- [x] 圖片可在設定頁更換：`POST /api/public-page/image`（multipart `image`）、
+      `DELETE /api/public-page/image` 還原預設
+- [x] 新 migration `2026_10_28_000002_AddImagePathToPublicPageSettings`（`image_path` 只存檔名）
+- [x] `App\Libraries\ShowcaseImage`：MIME 以檔案內容判斷、10MB 上限、隨機檔名、路徑穿越防護
+- [x] 上傳容量：`Dockerfile.prod` 加 `upload_max_filesize=12M` / `post_max_size=14M`；
+      nginx 加 `client_max_body_size 12m`
+- [x] 前端設定頁新增「展示圖片」卡片（預覽、上傳、還原預設、10MB 前端先擋）
+
+### 這輪驗證紀錄（Docker，port 18999）
+- `php -l` 6 檔通過；ESLint 0 問題；Vite build 成功；`nginx -t` ok
+- 上傳 345B 小圖 → 200，`image_source=custom`；`/showcase/image` 回傳 bytes 與上傳檔完全相同
+- 上傳 1.6MB 海報 → 200，舊檔被清掉（上傳目錄只有 1 個檔）
+- 11MB 檔 → 422「圖片不可超過 10 MB」；文字檔偽裝 .png → 422「僅支援 PNG、JPEG、WebP」
+- 未登入上傳 → 401；`DELETE` → `image_source=default`，回傳 bytes 等於內建預設圖
+- 瀏覽器（Playwright）：設定頁選檔 → 上傳 → 徽章變「自訂圖片」、預覽換圖、Toast 正常；
+  按「還原預設」→ 徽章回「內建預設」、預覽回預設圖、Toast 正常
+- `/showcase` computed style：`background-color: rgb(255,255,255)`、`background-image: none`、
+  `box-shadow: none`、`border-radius: 0px`、圖片載入 2938×2463、無橫向溢出
+
 ## 風險
 - 低-中：新增對外端點。預設不限來源（依需求），但可立即用開關關閉。
 - 白名單依 `X-Forwarded-For` 最左值判斷；若最前面沒有 Cloudflare 等會覆寫標頭的服務，

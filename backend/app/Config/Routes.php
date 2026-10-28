@@ -72,6 +72,8 @@ $routes->group('api', static function ($routes) {
     $routes->group('public-page', ['filter' => 'auth'], static function ($routes) {
         $routes->get('settings', 'Api\PublicPageSettingsController::show');
         $routes->put('settings', 'Api\PublicPageSettingsController::update');
+        $routes->post('image', 'Api\PublicPageSettingsController::uploadImage');
+        $routes->delete('image', 'Api\PublicPageSettingsController::resetImage');
     });
 
     // 通知路由（公開，不需認證）

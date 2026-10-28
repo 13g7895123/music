@@ -3,16 +3,21 @@
 namespace App\Controllers\Api;
 
 use App\Libraries\IpAllowlist;
+use App\Libraries\ShowcaseImage;
 use App\Models\PublicPageSettingModel;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\Controller;
 use CodeIgniter\HTTP\Exceptions\HTTPException;
+use CodeIgniter\HTTP\Files\UploadedFile;
+use RuntimeException;
 
 /**
  * 公開展示頁設定（需登入）
  *
- * GET  /api/public-page/settings
- * PUT  /api/public-page/settings  body: { is_enabled: bool, allowed_ips: string }
+ * GET    /api/public-page/settings          讀取設定
+ * PUT    /api/public-page/settings          更新開關與白名單
+ * POST   /api/public-page/image             上傳展示圖片（multipart，欄位 image）
+ * DELETE /api/public-page/image             還原為內建預設圖片
  */
 class PublicPageSettingsController extends Controller
 {
@@ -85,16 +90,76 @@ class PublicPageSettingsController extends Controller
     }
 
     /**
+     * POST /api/public-page/image
+     */
+    public function uploadImage()
+    {
+        $file = $this->request->getFile('image');
+
+        if (! $file instanceof UploadedFile) {
+            return $this->fail('缺少圖片檔案（表單欄位名稱需為 image）', 422);
+        }
+
+        try {
+            $filename = ShowcaseImage::store($file);
+        } catch (RuntimeException $e) {
+            return $this->fail($e->getMessage(), 422);
+        }
+
+        $model   = new PublicPageSettingModel();
+        $current = $model->getForPage(self::PAGE_KEY);
+
+        // 換圖後清掉舊檔，避免上傳目錄愈積愈多
+        ShowcaseImage::delete($current['image_path'] ?? null);
+
+        $model->update($current['id'], [
+            'image_path' => $filename,
+            'updated_by' => $this->request->userId,
+        ]);
+
+        return $this->respond(api_success(
+            $this->presentSettings($model->getForPage(self::PAGE_KEY)),
+            '展示圖片已更新'
+        ));
+    }
+
+    /**
+     * DELETE /api/public-page/image
+     */
+    public function resetImage()
+    {
+        $model   = new PublicPageSettingModel();
+        $current = $model->getForPage(self::PAGE_KEY);
+
+        ShowcaseImage::delete($current['image_path'] ?? null);
+
+        $model->update($current['id'], [
+            'image_path' => null,
+            'updated_by' => $this->request->userId,
+        ]);
+
+        return $this->respond(api_success(
+            $this->presentSettings($model->getForPage(self::PAGE_KEY)),
+            '已還原為預設圖片'
+        ));
+    }
+
+    /**
      * 注意：不可命名為 format()，會覆蓋 ResponseTrait 內部的同名私有方法。
      */
     private function presentSettings(array $settings): array
     {
+        $image = ShowcaseImage::resolve($settings['image_path'] ?? null);
+
         return [
             'page_key' => self::PAGE_KEY,
             'is_enabled' => (bool) ($settings['is_enabled'] ?? false),
             'allowed_ips' => (string) ($settings['allowed_ips'] ?? ''),
             'public_path' => '/showcase',
             'image_path' => '/showcase/image',
+            // v 參數用檔案修改時間，換圖後前端預覽才會更新
+            'image_url' => '/showcase/image?v=' . ($image === null ? 0 : filemtime($image['path'])),
+            'image_source' => $image['source'] ?? 'default',
             'detected_ip' => $this->request->getIPAddress(),
             'updated_at' => $settings['updated_at'] ?? null,
         ];

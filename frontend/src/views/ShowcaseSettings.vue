@@ -19,6 +19,55 @@
     <template v-else>
       <section class="card">
         <div class="card-header">
+          <h2>展示圖片</h2>
+          <span
+            class="badge"
+            :class="{ 'badge-active': imageSource === 'custom' }"
+          >{{ imageSource === 'custom' ? '自訂圖片' : '內建預設' }}</span>
+        </div>
+
+        <div class="image-preview">
+          <img
+            :src="imageUrl"
+            alt="目前展示圖片預覽"
+          >
+        </div>
+
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          class="file-input"
+          @change="handleFileChange"
+        >
+
+        <p class="hint">
+          支援 PNG / JPEG / WebP，單檔 10MB 以內；上傳後立刻生效，「還原預設」可回到內建圖片。
+        </p>
+
+        <div class="actions">
+          <BaseButton
+            variant="primary"
+            size="sm"
+            :loading="uploading"
+            :disabled="!selectedFile"
+            @click="handleUpload"
+          >
+            上傳圖片
+          </BaseButton>
+          <BaseButton
+            variant="outline-secondary"
+            size="sm"
+            :disabled="imageSource !== 'custom' || uploading"
+            @click="handleResetImage"
+          >
+            還原預設
+          </BaseButton>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
           <h2>顯示開關</h2>
           <span
             class="badge"
@@ -115,7 +164,8 @@
         </p>
 
         <p class="hint">
-          頁面顯示的圖片是 <code>backend/resources/showcase/261023_v1.png</code>；
+          上傳的圖片存在伺服器的 <code>writable/uploads/showcase/</code>，
+          未上傳時顯示專案內建的 <code>backend/resources/showcase/261023_v1.png</code>；
           頁面與圖片共用同一組開關與 IP 白名單。
         </p>
       </section>
@@ -157,10 +207,17 @@ const toast = useToast()
 
 const loading = ref(true)
 const saving = ref(false)
+const uploading = ref(false)
 const copied = ref(false)
 const detectedIp = ref('')
 const publicPath = ref('/showcase')
 const imagePath = ref('/showcase/image')
+const imageUrl = ref('/showcase/image')
+const imageSource = ref('default')
+const selectedFile = ref(null)
+const fileInput = ref(null)
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
 const form = reactive({
   is_enabled: false,
@@ -192,6 +249,8 @@ function applySettings(data) {
   detectedIp.value = data.detected_ip || ''
   publicPath.value = data.public_path || '/showcase'
   imagePath.value = data.image_path || '/showcase/image'
+  imageUrl.value = data.image_url || imagePath.value
+  imageSource.value = data.image_source || 'default'
 }
 
 async function fetchSettings() {
@@ -226,6 +285,51 @@ async function handleSave() {
 function handleReset() {
   form.is_enabled = saved.value.is_enabled
   form.allowed_ips = saved.value.allowed_ips
+}
+
+function handleFileChange(event) {
+  const file = event.target.files?.[0] || null
+
+  if (file && file.size > MAX_IMAGE_BYTES) {
+    toast.error('圖片不可超過 10 MB')
+    event.target.value = ''
+    selectedFile.value = null
+    return
+  }
+
+  selectedFile.value = file
+}
+
+async function handleUpload() {
+  if (!selectedFile.value) return
+
+  uploading.value = true
+  try {
+    const response = await publicPageService.uploadImage(selectedFile.value)
+    applySettings(response.data.data)
+    selectedFile.value = null
+    if (fileInput.value) fileInput.value.value = ''
+    toast.success('展示圖片已更新')
+  } catch (error) {
+    console.error('Failed to upload showcase image:', error)
+    toast.error(errorMessage(error, '圖片上傳失敗'))
+  } finally {
+    uploading.value = false
+  }
+}
+
+async function handleResetImage() {
+  uploading.value = true
+  try {
+    const response = await publicPageService.resetImage()
+    applySettings(response.data.data)
+    toast.success('已還原為預設圖片')
+  } catch (error) {
+    console.error('Failed to reset showcase image:', error)
+    toast.error(errorMessage(error, '還原預設圖片失敗'))
+  } finally {
+    uploading.value = false
+  }
 }
 
 function addDetectedIp() {
@@ -428,6 +532,40 @@ onMounted(fetchSettings)
 .ip-input:focus {
   outline: none;
   border-color: var(--amber-400);
+}
+
+.image-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+}
+
+.image-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+}
+
+.file-input {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.file-input::file-selector-button {
+  margin-right: var(--space-3);
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--cream-100);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
 }
 
 .url-row {

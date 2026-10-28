@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Libraries\IpAllowlist;
+use App\Libraries\ShowcaseImage;
 use App\Models\PublicPageSettingModel;
 
 /**
@@ -10,18 +11,19 @@ use App\Models\PublicPageSettingModel;
  *
  * 開關與來源 IP 白名單由 /api/public-page/settings 管理（需登入）。
  * 頁面與圖片都套用同一組檢查，避免只鎖頁面、圖片仍可被直接取得。
+ * 圖片可由設定頁上傳替換，未上傳時使用 backend/resources/showcase 內的預設圖。
  */
 class Showcase extends BaseController
 {
     private const PAGE_KEY = 'showcase';
-    private const IMAGE_PATH = 'resources/showcase/261023_v1.png';
 
     /**
      * GET /showcase
      */
     public function show()
     {
-        $denied = $this->guard();
+        $settings = (new PublicPageSettingModel())->getForPage(self::PAGE_KEY);
+        $denied   = $this->guard($settings);
 
         if ($denied !== null) {
             return $denied;
@@ -39,26 +41,27 @@ class Showcase extends BaseController
      */
     public function image()
     {
-        $denied = $this->guard();
+        $settings = (new PublicPageSettingModel())->getForPage(self::PAGE_KEY);
+        $denied   = $this->guard($settings);
 
         if ($denied !== null) {
             return $denied;
         }
 
-        $path = ROOTPATH . self::IMAGE_PATH;
+        $image = ShowcaseImage::resolve($settings['image_path'] ?? null);
 
-        if (! is_file($path)) {
+        if ($image === null) {
             return $this->notFound();
         }
 
-        $contents = file_get_contents($path);
+        $contents = file_get_contents($image['path']);
 
         if ($contents === false) {
             return $this->notFound();
         }
 
         return $this->response
-            ->setHeader('Content-Type', 'image/png')
+            ->setHeader('Content-Type', $image['mime'])
             ->setHeader('Content-Length', (string) strlen($contents))
             ->setHeader('Cache-Control', 'no-store, private')
             ->setHeader('X-Content-Type-Options', 'nosniff')
@@ -68,10 +71,8 @@ class Showcase extends BaseController
     /**
      * 回傳拒絕用的 response，通過檢查則回 null。
      */
-    private function guard()
+    private function guard(array $settings)
     {
-        $settings = (new PublicPageSettingModel())->getForPage(self::PAGE_KEY);
-
         // 關閉時一律視為不存在，不透露頁面曾經存在。
         if (! (bool) ($settings['is_enabled'] ?? false)) {
             return $this->notFound();

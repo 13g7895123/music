@@ -315,6 +315,19 @@ export const publicPageService = {
   updateSettings({ is_enabled, allowed_ips }) {
     return api.put('/public-page/settings', { is_enabled, allowed_ips })
   },
+
+  uploadImage(file) {
+    const form = new FormData()
+    form.append('image', file)
+    // 交由瀏覽器設定含 boundary 的 multipart Content-Type
+    return api.post('/public-page/image', form, {
+      headers: { 'Content-Type': undefined },
+    })
+  },
+
+  resetImage() {
+    return api.delete('/public-page/image')
+  },
 }
 
 export default api

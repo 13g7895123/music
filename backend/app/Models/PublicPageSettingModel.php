@@ -18,6 +18,7 @@ class PublicPageSettingModel extends Model
         'page_key',
         'is_enabled',
         'allowed_ips',
+        'image_path',
         'updated_by',
     ];
 

@@ -43,11 +43,6 @@
             height: auto;
             max-width: 100%;
             max-height: calc(100vh - 2 * clamp(12px, 3vw, 40px));
-            border-radius: 16px;
-            background: #ffffff;
-            box-shadow:
-                0 24px 60px rgba(38, 28, 18, 0.18),
-                0 2px 8px rgba(38, 28, 18, 0.08);
         }
 
         @media (max-width: 600px) {
@@ -57,8 +52,6 @@
 
             .poster {
                 max-height: none;
-                border-radius: 0;
-                box-shadow: none;
             }
         }
     </style>

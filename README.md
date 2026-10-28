@@ -177,12 +177,17 @@ GitHub Actions 有兩條 pipeline：
 
 | 路徑 | 說明 |
 | --- | --- |
-| `GET /showcase` | 圖片展示頁 |
-| `GET /showcase/image` | PNG 原圖（與頁面共用同一組檢查） |
-| `GET/PUT /api/public-page/settings` | 讀寫設定（需登入） |
+| `GET /showcase` | 圖片展示頁（純白底，圖片本身不帶陰影或圓角） |
+| `GET /showcase/image` | 目前設定的圖片原檔（與頁面共用同一組檢查） |
+| `GET/PUT /api/public-page/settings` | 讀寫開關與 IP 白名單（需登入） |
+| `POST /api/public-page/image` | 上傳展示圖片，multipart 欄位 `image`（需登入） |
+| `DELETE /api/public-page/image` | 還原為內建預設圖片（需登入） |
 
 - 設定入口：登入後點導覽列的「展示頁」（`/showcase-settings`）。
 - 可切換開關；關閉時上述兩個公開路徑都回 `404`。
+- 圖片可直接在設定頁更換：支援 PNG / JPEG / WebP、單檔 10MB 以內。
+  上傳檔存於 `writable/uploads/showcase/`（production 由 `backend/writable` volume 保存，
+  重新部署不會消失），資料庫只記錄檔名；未上傳時使用內建預設圖。
 - 來源 IP 白名單支援 IPv4 / IPv6 與 CIDR，每行一筆；留空表示不限來源。
   不在白名單的請求回 `403`。
 - IP 判斷使用 `X-Forwarded-For` 的真實訪客 IP（CI4 的 `proxyIPs` 已信任內網代理，
@@ -190,7 +195,9 @@ GitHub Actions 有兩條 pipeline：
   Cloudflare 預設會帶入訪客 IP。
   > ⚠️ 若最前面沒有 Cloudflare 之類會覆寫此標頭的服務，訪客可自行偽造
   > `X-Forwarded-For` 繞過白名單。此白名單適合擋掉一般掃描與誤觸，不是強認證。
-- 圖片檔案：`backend/resources/showcase/261023_v1.png`（隨 backend image 一起部署）。
+- 圖片檔案：預設 `backend/resources/showcase/261023_v1.png`（隨 backend image 一起部署），
+  可在設定頁上傳替換；上傳容量上限由 PHP（`upload_max_filesize = 12M`）與
+  nginx（`client_max_body_size 12m`）共同決定，程式端再擋 10MB。
 - **NPM 設定**：把 `/showcase` 與 `/showcase/image` 代理到本專案的 `APP_PORT`
   （或整個網域代理），路徑需保留，不要改寫成 `/`。
 
