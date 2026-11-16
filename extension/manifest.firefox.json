@@ -21,7 +21,13 @@
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["https://www.youtube.com/*"],
   "background": {
-    "scripts": ["common.js", "background.js"]
+    "scripts": [
+      "common.js",
+      "vendor/wanakana.min.js",
+      "vendor/kuromoji/kuromoji.js",
+      "ktv/reading.js",
+      "background.js"
+    ]
   },
   "action": {
     "default_title": "加入 YouTube Loop Player 影片庫",
@@ -41,6 +47,18 @@
       "js": ["common.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["ktv/captions.js", "ktv/main.js"],
+      "css": ["ktv/ktv.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["ktv/hook.js"],
+      "matches": ["https://www.youtube.com/*"]
     }
   ]
 }
