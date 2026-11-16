@@ -1,0 +1,9 @@
+{
+  "name": "youtube-loop-player-extension",
+  "private": true,
+  "description": "擴充功能的第三方程式庫（build.sh 會複製到 dist/*/vendor）",
+  "dependencies": {
+    "kuromoji": "0.1.2",
+    "wanakana": "5.3.1"
+  }
+}

@@ -1,0 +1,131 @@
+/* 【KTV】播放器上的字幕 + 右下角控制面板 */
+
+/* KTV 開啟時隱藏 YouTube 原生字幕（字幕仍要開著，才拿得到資料） */
+html.ylp-ktv-on #movie_player .ytp-caption-window-container {
+  display: none !important;
+}
+
+/* ---------- 字幕 ---------- */
+#ylp-ktv {
+  --ylp-hl: #ffd23f;
+  --ylp-base: #ffffff;
+  position: absolute;
+  left: 50%;
+  bottom: 64px;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: 92%;
+  padding: 0.35em 0.7em 0.45em;
+  border-radius: 0.4em;
+  background: rgba(0, 0, 0, 0.85);
+  color: var(--ylp-base);
+  font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  font-size: 28px; /* 實際大小由 main.js 依播放器寬度設定 */
+  line-height: 1.3;
+  text-align: center;
+  pointer-events: none;
+}
+html:not(.ylp-ktv-on) #ylp-ktv { display: none; }
+#ylp-ktv:has(.ylp-ktv-line:empty):has(.ylp-ktv-zh:empty) { display: none; }
+/* 控制列出現時往上讓 */
+#movie_player.ytp-autohide #ylp-ktv { bottom: 24px; }
+
+.ylp-ktv-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch; /* 同一行的詞一樣高 → 羅馬拼音、日文各自對齊 */
+  column-gap: 0.25em;
+  row-gap: 0.2em;
+}
+
+/* 每個詞一欄：上面羅馬拼音、下面日文，對齊得起來 */
+.ylp-tok {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+.ylp-ro {
+  font-family: system-ui, sans-serif;
+  font-size: 0.56em;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.15em;
+  white-space: nowrap;
+}
+.ylp-ja { white-space: nowrap; }
+.ylp-ja ruby { ruby-position: over; }
+.ylp-ja rt {
+  font-size: 0.5em;
+  line-height: 1.1;
+}
+
+/* KTV 填色：--p = 這個字念到的百分比 */
+.ylp-sw {
+  background-image: linear-gradient(90deg, var(--ylp-hl) var(--p, 0%), var(--ylp-base) var(--p, 0%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ylp-ktv-zh {
+  margin-top: 0.2em;
+  font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+  font-size: 0.62em;
+  color: #9fe3ff;
+}
+.ylp-ktv-zh:empty { display: none; }
+
+/* ---------- 控制面板 ---------- */
+#ylp-ktv-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2200;
+  width: 260px;
+  border-radius: 10px;
+  background: rgba(24, 24, 24, 0.95);
+  color: #fff;
+  font: 13px/1.5 system-ui, "Microsoft JhengHei", sans-serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.ylp-kp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  font-weight: 600;
+}
+.ylp-kp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+#ylp-ktv-panel.ylp-collapsed .ylp-kp-body { display: none; }
+#ylp-ktv-panel:not(.ylp-on) .ylp-kp-row { display: none; }
+.ylp-kp-status { color: #bbb; font-size: 12px; }
+.ylp-kp-status:empty { display: none; }
+.ylp-kp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+}
+#ylp-ktv-panel label { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
+#ylp-ktv-panel select,
+#ylp-ktv-panel button {
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #3a3a3a;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+#ylp-ktv-panel button:hover,
+#ylp-ktv-panel select:hover { background: #4a4a4a; }
+#ylp-ktv-panel .ylp-kp-main { background: #c62828; font-weight: 600; padding: 6px 8px; }
+#ylp-ktv-panel.ylp-on .ylp-kp-main { background: #3a3a3a; }
+.ylp-kp-nav { justify-content: space-between; }
+.ylp-kp-head button { background: transparent !important; font-size: 16px; padding: 0 6px !important; }

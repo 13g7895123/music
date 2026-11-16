@@ -1,6 +1,6 @@
 // Chrome 的 service worker 需自行載入共用檔；Firefox 由 manifest 的 background.scripts 先載入
 if (typeof importScripts === 'function') {
-  importScripts('common.js');
+  importScripts('common.js', 'vendor/wanakana.min.js', 'vendor/kuromoji/kuromoji.js', 'ktv/reading.js');
 }
 
 class ApiError extends Error {
@@ -84,6 +84,12 @@ const handlers = {
   async openOptions() {
     await ext.runtime.openOptionsPage();
     return true;
+  },
+
+  // KTV：斷詞＋讀音（辭典在背景載入，不卡 YouTube 頁面）
+  async ktvAnnotate({ texts }) {
+    const tokenizer = await ylpKtv.loadTokenizer(ext.runtime.getURL('vendor/kuromoji/dict/'));
+    return texts.map((text) => ylpKtv.annotate(tokenizer, text));
   },
 };
 

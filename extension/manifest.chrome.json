@@ -32,6 +32,18 @@
       "js": ["common.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["ktv/captions.js", "ktv/main.js"],
+      "css": ["ktv/ktv.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["ktv/hook.js"],
+      "matches": ["https://www.youtube.com/*"]
     }
   ]
 }

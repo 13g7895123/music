@@ -3,14 +3,31 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+if [ ! -d node_modules/kuromoji ] || [ ! -d node_modules/wanakana ]; then
+  npm ci --ignore-scripts --no-audit --no-fund
+fi
+
 rm -rf dist
 mkdir -p dist/chrome dist/firefox
 
+# 第三方程式庫（不修改原始檔，方便 AMO 審核比對）
+copy_vendor() {
+  local vendor="$1/vendor"
+  mkdir -p "$vendor/kuromoji"
+  cp node_modules/kuromoji/build/kuromoji.js "$vendor/kuromoji/"
+  cp -r node_modules/kuromoji/dict "$vendor/kuromoji/"
+  cp node_modules/kuromoji/LICENSE-2.0.txt node_modules/kuromoji/NOTICE.md "$vendor/kuromoji/"
+  cp node_modules/wanakana/wanakana.min.js "$vendor/"
+  cp node_modules/wanakana/LICENSE "$vendor/wanakana.LICENSE"
+}
+
 cp -r src/. dist/chrome/
 cp manifest.chrome.json dist/chrome/manifest.json
+copy_vendor dist/chrome
 
 cp -r src/. dist/firefox/
 cp manifest.firefox.json dist/firefox/manifest.json
+copy_vendor dist/firefox
 
 pack() {
   local dir="$1" out="$2"
